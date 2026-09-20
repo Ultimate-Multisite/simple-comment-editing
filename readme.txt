@@ -3,7 +3,7 @@ Contributors: ronalfy
 Tags: comment editing, comments ,edit comments, ajax comments, comment moderation
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 3.4.0
+Stable tag: 3.4.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,10 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Light button theme.
 
 == Changelog ==
+
+= 3.4.1 =
+* Released 2026-09-20
+* Fix: Restoring the comment edit interface on pending comments in block themes such as Twenty Twenty-Four.
 
 = 3.4.0 =
 * Released 2026-09-11 - Recommended update as this release fixes a few security warnings, removes Pro branding, and renames the plugin back to Simple Comment Editing while porting some pro editing features.
@@ -521,5 +525,5 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Upgrade Notice ==
 
-= 3.4.0 =
-Recommended update as this release fixes a few security warnings, removes Pro branding, and renames the plugin back to Simple Comment Editing while porting some pro editing features.
+= 3.4.1 =
+Resolving comment moderation bug when editing a comment in a block theme.

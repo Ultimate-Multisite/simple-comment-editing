@@ -61,6 +61,27 @@ class Simple_Comment_Editing {
 	private $mailchimp_api = 'https://<sp>.api.mailchimp.com/3.0/';
 
 	/**
+	 * Whether the core/comment-content block is currently rendering.
+	 *
+	 * @var bool
+	 */
+	private $rendering_comment_content_block = false;
+
+	/**
+	 * Comment IDs whose SCE UI should be injected after the comment-content block renders.
+	 *
+	 * @var array
+	 */
+	private $deferred_comment_ids = array();
+
+	/**
+	 * Whether add_edit_interface is running after block sanitization.
+	 *
+	 * @var bool
+	 */
+	private $injecting_after_block = false;
+
+	/**
 	 * Retrieve an instance of the class.
 	 *
 	 * @return Simple_Comment_Editing
@@ -146,6 +167,8 @@ class Simple_Comment_Editing {
 			add_filter( 'comment_excerpt', array( $this, 'add_edit_interface' ), 1000, 2 );
 			add_filter( 'comment_text', array( $this, 'add_edit_interface' ), 1000, 2 );
 			add_filter( 'thesis_comment_text', array( $this, 'add_edit_interface' ), 1000, 2 );
+			add_filter( 'pre_render_block', array( $this, 'maybe_mark_comment_content_block' ), 10, 2 );
+			add_filter( 'render_block_core/comment-content', array( $this, 'inject_edit_interface_after_block' ), 10, 3 );
 		}
 
 		// Add button themes.
@@ -167,7 +190,7 @@ class Simple_Comment_Editing {
 	 */
 	public function add_edit_interface( $comment_content, $passed_comment = false ) {
 		global $comment; // For Thesis.
-		if ( ( ! $comment && ! $passed_comment ) || empty( $comment_content ) ) {
+		if ( ( ! $comment && ! $passed_comment ) || ( empty( $comment_content ) && ! $this->injecting_after_block ) ) {
 			return $comment_content;
 		}
 		if ( $passed_comment ) {
@@ -179,6 +202,12 @@ class Simple_Comment_Editing {
 
 		// Check to see if a user can edit their comment.
 		if ( ! Functions::can_edit( $comment_id, $post_id ) ) {
+			return $comment_content;
+		}
+
+		// Block themes strip pending comment HTML after the comment_text filter.
+		if ( $this->should_defer_for_comment_content_block( $comment ) ) {
+			$this->deferred_comment_ids[ $comment_id ] = true;
 			return $comment_content;
 		}
 
@@ -423,6 +452,274 @@ class Simple_Comment_Editing {
 		// Return content.
 		$comment_content = $comment_wrapper . $sce_content;
 		return $comment_content;
+	}
+
+	/**
+	 * Mark when the core/comment-content block is rendering.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param string|null $pre_render   The pre-rendered content. Default null.
+	 * @param array       $parsed_block The block being rendered.
+	 * @return string|null Unchanged pre-render value.
+	 */
+	public function maybe_mark_comment_content_block( $pre_render, $parsed_block ) {
+		$this->rendering_comment_content_block = ( isset( $parsed_block['blockName'] ) && 'core/comment-content' === $parsed_block['blockName'] );
+		return $pre_render;
+	}
+
+	/**
+	 * Whether pending comment HTML will be stripped after the comment_text filter.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param object $comment Comment object.
+	 * @return bool True when SCE should defer injection until after the block renders.
+	 */
+	private function should_defer_for_comment_content_block( $comment ) {
+		if ( $this->injecting_after_block || ! $this->rendering_comment_content_block ) {
+			return false;
+		}
+		if ( ! isset( $comment->comment_approved ) || '0' !== (string) $comment->comment_approved ) {
+			return false;
+		}
+		$commenter          = wp_get_current_commenter();
+		$show_pending_links = ! empty( $commenter['comment_author'] );
+		return ! $show_pending_links;
+	}
+
+	/**
+	 * Inject the SCE interface after core/comment-content sanitizes pending comments.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param string    $block_content The block HTML.
+	 * @param array     $parsed_block  The parsed block.
+	 * @param \WP_Block $block         The block instance.
+	 * @return string Block HTML with the SCE interface restored.
+	 */
+	public function inject_edit_interface_after_block( $block_content, $parsed_block, $block ) {
+		$this->rendering_comment_content_block = false;
+
+		if ( isset( $parsed_block['blockName'] ) && 'core/comment-content' !== $parsed_block['blockName'] ) {
+			return $block_content;
+		}
+
+		$comment_id = 0;
+		if ( $block instanceof \WP_Block && isset( $block->context['commentId'] ) ) {
+			$comment_id = absint( $block->context['commentId'] );
+		}
+
+		if ( ! $comment_id || empty( $this->deferred_comment_ids[ $comment_id ] ) ) {
+			return $block_content;
+		}
+
+		unset( $this->deferred_comment_ids[ $comment_id ] );
+
+		$comment = get_comment( $comment_id );
+		if ( ! $comment ) {
+			return $block_content;
+		}
+
+		$parts = $this->split_comment_content_block( $block_content );
+		if ( false === $parts ) {
+			return $block_content;
+		}
+
+		$this->injecting_after_block = true;
+		$sce_markup                  = $this->add_edit_interface( $parts['inner'], $comment );
+		$this->injecting_after_block = false;
+
+		return $parts['open'] . $parts['moderation_note'] . $sce_markup . $parts['close'];
+	}
+
+	/**
+	 * Split a comment-content block into wrapper, moderation note, and inner text.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param string $block_content The rendered block HTML.
+	 * @return array|false {
+	 *     @type string $open             Opening wrapper tag.
+	 *     @type string $moderation_note  Pending-moderation notice HTML, if present.
+	 *     @type string $inner            Remaining inner HTML.
+	 *     @type string $close            Closing wrapper tag.
+	 * }
+	 */
+	private function split_comment_content_block( $block_content ) {
+		$parts = $this->split_comment_content_block_with_html_api( $block_content );
+		if ( false !== $parts ) {
+			return $parts;
+		}
+
+		return $this->split_comment_content_block_with_regex( $block_content );
+	}
+
+	/**
+	 * Split comment-content markup using the WordPress HTML API.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param string $block_content The rendered block HTML.
+	 * @return array|false Split parts, or false when the markup cannot be parsed.
+	 */
+	private function split_comment_content_block_with_html_api( $block_content ) {
+		if ( ! class_exists( '\WP_HTML_Processor' ) ) {
+			return false;
+		}
+
+		$processor = \WP_HTML_Processor::create_fragment( $block_content );
+		if ( ! $processor || ! $processor->next_tag( 'DIV' ) ) {
+			return false;
+		}
+
+		$open             = $this->get_html_processor_token_markup( $processor );
+		$wrapper_depth    = count( $processor->get_breadcrumbs() );
+		$inner            = '';
+		$moderation       = '';
+		$moderation_buf   = '';
+		$in_moderation    = false;
+		$found_note_em    = false;
+		$moderation_depth = 0;
+
+		while ( $processor->next_token() ) {
+			if (
+				'#tag' === $processor->get_token_type()
+				&& $processor->is_tag_closer()
+				&& 'DIV' === $processor->get_tag()
+				&& count( $processor->get_breadcrumbs() ) < $wrapper_depth
+			) {
+				break;
+			}
+
+			$token_html = $this->get_html_processor_token_markup( $processor );
+
+			if (
+				! $in_moderation
+				&& '' === $moderation
+				&& '' === $inner
+				&& '#tag' === $processor->get_token_type()
+				&& ! $processor->is_tag_closer()
+				&& 'P' === $processor->get_tag()
+				&& count( $processor->get_breadcrumbs() ) === ( $wrapper_depth + 1 )
+			) {
+				$in_moderation    = true;
+				$moderation_depth = count( $processor->get_breadcrumbs() );
+				$moderation_buf   = $token_html;
+				$found_note_em    = false;
+				continue;
+			}
+
+			if ( $in_moderation ) {
+				$moderation_buf .= $token_html;
+				if (
+					'#tag' === $processor->get_token_type()
+					&& ! $processor->is_tag_closer()
+					&& 'EM' === $processor->get_tag()
+					&& $processor->has_class( 'comment-awaiting-moderation' )
+				) {
+					$found_note_em = true;
+				}
+				if (
+					'#tag' === $processor->get_token_type()
+					&& $processor->is_tag_closer()
+					&& 'P' === $processor->get_tag()
+					&& count( $processor->get_breadcrumbs() ) < $moderation_depth
+				) {
+					$in_moderation = false;
+					if ( $found_note_em ) {
+						$moderation = $moderation_buf;
+					} else {
+						$inner .= $moderation_buf;
+					}
+				}
+				continue;
+			}
+
+			$inner .= $token_html;
+		}
+
+		return array(
+			'open'            => $open,
+			'moderation_note' => $moderation,
+			'inner'           => $inner,
+			'close'           => '</div>',
+		);
+	}
+
+	/**
+	 * Split comment-content markup with regex when the HTML API cannot parse it.
+	 * This is used as a fallback.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param string $block_content The rendered block HTML.
+	 * @return array|false Split parts, or false when the markup does not match.
+	 */
+	private function split_comment_content_block_with_regex( $block_content ) {
+		if ( ! preg_match( '/^(<div\b[^>]*>)(.*)(<\/div>\s*)$/s', $block_content, $matches ) ) {
+			return false;
+		}
+
+		$open            = $matches[1];
+		$inner           = $matches[2];
+		$close           = $matches[3];
+		$moderation_note = '';
+		if ( preg_match( '/^(<p>\s*<em class="comment-awaiting-moderation">.*?<\/em>\s*<\/p>)/s', $inner, $note_matches ) ) {
+			$moderation_note = $note_matches[1];
+			$inner           = substr( $inner, strlen( $moderation_note ) );
+		}
+
+		return array(
+			'open'            => $open,
+			'moderation_note' => $moderation_note,
+			'inner'           => $inner,
+			'close'           => $close,
+		);
+	}
+
+	/**
+	 * Serialize the currently matched HTML API token.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param \WP_HTML_Processor $processor The HTML processor at a token.
+	 * @return string Serialized markup for the current token.
+	 */
+	private function get_html_processor_token_markup( $processor ) {
+		if ( is_callable( array( $processor, 'serialize_token' ) ) ) {
+			return $processor->serialize_token();
+		}
+
+		$token_type = $processor->get_token_type();
+		if ( '#text' === $token_type ) {
+			return esc_html( $processor->get_modifiable_text() );
+		}
+
+		if ( '#tag' !== $token_type ) {
+			return '';
+		}
+
+		$tag_name = strtolower( $processor->get_tag() );
+		if ( $processor->is_tag_closer() ) {
+			return '</' . $tag_name . '>';
+		}
+
+		$html  = '<' . $tag_name;
+		$names = $processor->get_attribute_names_with_prefix( '' );
+		if ( is_array( $names ) ) {
+			foreach ( $names as $name ) {
+				$value = $processor->get_attribute( $name );
+				if ( true === $value ) {
+					$html .= ' ' . $name;
+				} elseif ( is_string( $value ) ) {
+					$html .= ' ' . $name . '="' . esc_attr( $value ) . '"';
+				}
+			}
+		}
+		$html .= '>';
+
+		return $html;
 	}
 
 	/**
