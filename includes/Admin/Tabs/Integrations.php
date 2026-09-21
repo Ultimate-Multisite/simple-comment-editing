@@ -105,6 +105,7 @@ class Integrations extends Tabs {
 					Functions::get_plugin_version(),
 					true
 				);
+				wp_set_script_translations( 'sce-integrations', 'simple-comment-editing' );
 				wp_localize_script(
 					'sce-integrations',
 					'sceIntegrations',

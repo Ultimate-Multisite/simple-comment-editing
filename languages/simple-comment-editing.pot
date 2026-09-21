@@ -1,130 +1,634 @@
-# Copyright (C) 2020 Simple Comment Editing
-# This file is distributed under the same license as the Simple Comment Editing package.
+# Copyright (C) 2026 Ronald Huereca
+# This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Simple Comment Editing\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/plugins/simple-comment-editing/\n"
+"Project-Id-Version: Simple Comment Editing 3.4.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/simple-comment-editing\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2020-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Ronald Huerca <ronald@mediaron.com>\n"
-"Language-Team: Ronald Huereca <ronald@mediaron.com\n"
-"X-Poedit-Basepath: ..\n"
-"X-Poedit-SourceCharset: UTF-8\n"
-"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
-"X-Poedit-SearchPath-0: .\n"
-"X-Poedit-SearchPathExcluded-0: *.js\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: simple-comment-editing\n"
 
-#: dist/js/simple-comment-editing.js:280, dist/js/simple-comment-editing.js:323, dist/js/simple-comment-editing.min.js:1, dist/js/simple-comment-editing.min.js:1
+#. Plugin Name of the plugin
+#: index.php
+#: includes/Admin/Admin_Settings.php:279
+#: includes/Admin/Admin_Settings.php:280
+#: includes/Functions.php:478
+#: includes/Functions.php:528
+msgid "Simple Comment Editing"
+msgstr ""
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: index.php
+msgid "https://github.com/ronalfy/simple-comment-editing"
+msgstr ""
+
+#. Description of the plugin
+#: index.php
+msgid "Allow your users to edit their comments."
+msgstr ""
+
+#. Author of the plugin
+#: index.php
+msgid "Ronald Huereca"
+msgstr ""
+
+#: includes/Admin/Admin_Settings.php:50
+msgid "Settings"
+msgstr ""
+
+#: includes/Admin/Admin_Settings.php:259
+msgid "Simple Comment Editing is the simplest and most extensible plugin to allow your users to edit their comments."
+msgstr ""
+
+#: includes/Admin/Tabs/Integrations.php:70
+msgctxt "Tab label as support"
+msgid "Newsletter Conversions"
+msgstr ""
+
+#: includes/Admin/Tabs/Integrations.php:142
+#: includes/Admin/Tabs/Integrations.php:179
+#: includes/Admin/Tabs/Integrations.php:312
+msgid "Could not verify nonce."
+msgstr ""
+
+#: includes/Admin/Tabs/Integrations.php:199
+#: includes/Admin/Tabs/Integrations.php:331
+#: includes/Options.php:151
+#: src/js/react/views/integrations/Mailchimp.js:160
+msgid "Sign Up for Updates"
+msgstr ""
+
+#: includes/Admin/Tabs/Integrations.php:267
+msgid "Could not connect to Mailchimp."
+msgstr ""
+
+#: includes/Admin/Tabs/Integrations.php:290
+msgid "There are no Mailchimp lists that were found."
+msgstr ""
+
+#: includes/Admin/Tabs/Integrations.php:338
+msgid "Mailchimp options have been reset."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:50
+msgctxt "Tab label as settings"
+msgid "Settings"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:89
+msgid "Your options have been saved."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:98
+msgid "Welcome to Simple Comment Editing!"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:99
+msgid "Simple Comment Editing allows you to set a time limit for comment editing. After the time limit has passed, the comment will no longer be editable by the user."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:101
+msgid "Timer"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:105
+msgid "Edit Timer in Minutes"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:108
+msgid "Enter the time that users have to edit their comments."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:112
+msgid "Timer Appearance"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:115
+msgid "Words"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:116
+msgid "Compact"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:118
+msgid "Select how the timer should appear to the user."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:122
+msgid "Show Timer"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:127
+msgid "Show the timer"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:129
+msgid "Enabling this will show the timer to the user when editing."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:135
+msgid "Who Can Edit"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:139
+msgid "Require Login"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:144
+msgid "Require login for editing"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:146
+msgid "Enabling this will require users to be logged in to edit their comments."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:150
+msgid "Unlimited Editing"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:155
+msgid "Unlimited timer for logged-in users"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:157
+msgid "Enabling this will allow unlimited editing for logged-in users who are the comment author."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:163
+msgid "Deletion"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:167
+msgid "Allow Deletion"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:172
+msgid "Allow comment deletion for users"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:174
+msgid "Enabling this option will allow users to delete their own comments."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:178
+msgid "Deletion Confirmation"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:183
+msgid "Enable comment deletion confirmation"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:185
+msgid "Enabling this will show a confirmation before the user is allowed to delete their own comments."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:189
+msgid "User Deleted Comments"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:192
+msgid "How should user-deleted comments be treated?"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:196
+#: includes/Admin/Tabs/Settings.php:216
+msgid "Send to Trash"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:201
+#: includes/Admin/Tabs/Settings.php:221
+msgid "Delete Permanently"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:204
+msgid "Choose whether to send user-deleted comments to the trash or delete them permanently."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:209
+msgid "Moderator Deleted Comments"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:212
+msgid "How should moderator-deleted comments be treated?"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:224
+msgid "Choose whether to send moderator-deleted comments to the trash or delete them permanently. This affects comments deleted in the admin as well."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:229
+msgid "Spammed Comments"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:232
+msgid "How should spam comments be treated?"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:236
+msgid "Send to Spam"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:241
+msgid "Spam and Delete"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:244
+msgid "When marking a comment as spam, choose whether to send the comment directly to spam, or to mark as spam then delete permanently. This affects comments marked as spam in the admin as well."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:251
+msgid "Appearance"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:255
+msgid "Button Theme"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:258
+msgid "None"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:259
+msgid "Regular"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:260
+msgid "Dark"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:261
+msgid "Light"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:266
+msgid "Allow icons for the buttons. Recommended if you have selected a button theme."
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:273
+msgid "Labels"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:277
+msgid "Click to Edit Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:283
+msgid "Save Button Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:289
+msgid "Cancel Button Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:295
+msgid "Delete Button Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:303
+msgid "Messages"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:307
+msgid "Comment Deletion Confirmation Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:313
+msgid "Comment Deleted Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:319
+msgid "Comment Deleted Error Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:325
+msgid "Comment Empty Error Text"
+msgstr ""
+
+#: includes/Admin/Tabs/Settings.php:333
+msgid "Save Options"
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:50
+msgctxt "Tab label as support"
+msgid "Help and Support"
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:101
+msgid "Get Support On the WordPress Plugin Directory"
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:105
+msgid "The best way to receive support is via the official WordPress Plugin Directory support forum."
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:109
+msgid "Open a Support Topic"
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:114
+msgid "File a GitHub Issue"
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:118
+msgid "Feature requests or modifications to existing behavior can be opened on GitHub."
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:122
+msgid "Open a GitHub Issue"
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:127
+#: includes/Admin/Tabs/Support.php:135
+msgid "Help Rate This Plugin"
+msgstr ""
+
+#: includes/Admin/Tabs/Support.php:131
+msgid "If you find this plugin useful, please consider leaving a star rating on WordPress.org."
+msgstr ""
+
+#: includes/Functions.php:259
+msgid "Unknown type."
+msgstr ""
+
+#: includes/Functions.php:262
+msgid "Attribute not found."
+msgstr ""
+
+#: includes/Functions.php:496
+msgid "Allow your users to edit comments."
+msgstr ""
+
+#: includes/Options.php:137
+#: simple-comment-editing.php:254
+msgid "Click to Edit"
+msgstr ""
+
+#: includes/Options.php:138
+#: simple-comment-editing.php:347
+msgid "Save"
+msgstr ""
+
+#: includes/Options.php:139
+#: simple-comment-editing.php:358
+msgid "Cancel"
+msgstr ""
+
+#: includes/Options.php:140
+#: simple-comment-editing.php:369
+msgid "Delete"
+msgstr ""
+
+#: includes/Options.php:141
+#: simple-comment-editing.php:688
+msgid "Do you want to delete this comment?"
+msgstr ""
+
+#: includes/Options.php:142
+#: simple-comment-editing.php:689
+msgid "Your comment has been removed."
+msgstr ""
+
+#: includes/Options.php:143
+#: simple-comment-editing.php:690
+msgid "Your comment could not be deleted"
+msgstr ""
+
+#: includes/Options.php:144
+msgid "Your comment appears to be empty."
+msgstr ""
+
+#: includes/WooCommerce.php:113
+msgid "Your rating"
+msgstr ""
+
+#: includes/WooCommerce.php:114
+msgid "Rate&hellip;"
+msgstr ""
+
+#: includes/WooCommerce.php:115
+msgid "Perfect"
+msgstr ""
+
+#: includes/WooCommerce.php:116
+msgid "Good"
+msgstr ""
+
+#: includes/WooCommerce.php:117
+msgid "Average"
+msgstr ""
+
+#: includes/WooCommerce.php:118
+msgid "Not that bad"
+msgstr ""
+
+#: includes/WooCommerce.php:119
+msgid "Very poor"
+msgstr ""
+
+#: simple-comment-editing.php:136
+msgid "You do not have permission to edit this comment."
+msgstr ""
+
+#: simple-comment-editing.php:137
+msgid "You can no longer edit this comment."
+msgstr ""
+
+#: simple-comment-editing.php:138
+msgid "Timer could not be stopped."
+msgstr ""
+
+#: simple-comment-editing.php:139
+msgid "Your comment cannot be empty. Delete instead?"
+msgstr ""
+
+#: simple-comment-editing.php:140
+msgid "This comment was marked as spam."
+msgstr ""
+
+#: simple-comment-editing.php:265
+msgid "Delete Comment"
+msgstr ""
+
+#: simple-comment-editing.php:299
+msgid "Loading"
+msgstr ""
+
+#: simple-comment-editing.php:687
+#: js/simple-comment-editing.js:349
+#: js/simple-comment-editing.js:358
+#: js/simple-comment-editing.js:372
+#: src/js/comment-editing/editing.js:140
+#: src/js/comment-editing/editing.js:149
+#: src/js/comment-editing/editing.js:163
+msgid "and"
+msgstr ""
+
+#: js/simple-comment-editing.js:348
+#: js/simple-comment-editing.js:391
+#: src/js/comment-editing/editing.js:139
+#: src/js/comment-editing/editing.js:182
 msgid "day"
 msgid_plural "days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/js/simple-comment-editing.js:281, dist/js/simple-comment-editing.js:290, dist/js/simple-comment-editing.js:304, dist/js/simple-comment-editing.min.js:1, dist/js/simple-comment-editing.min.js:1, dist/js/simple-comment-editing.min.js:1, src/simple-comment-editing.php:342
-msgid "and"
-msgstr ""
-
-#: dist/js/simple-comment-editing.js:289, dist/js/simple-comment-editing.js:323, dist/js/simple-comment-editing.min.js:1, dist/js/simple-comment-editing.min.js:1
+#: js/simple-comment-editing.js:357
+#: js/simple-comment-editing.js:391
+#: src/js/comment-editing/editing.js:148
+#: src/js/comment-editing/editing.js:182
 msgid "hour"
 msgid_plural "hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/js/simple-comment-editing.js:299, dist/js/simple-comment-editing.js:323, dist/js/simple-comment-editing.min.js:1, dist/js/simple-comment-editing.min.js:1
+#: js/simple-comment-editing.js:367
+#: js/simple-comment-editing.js:391
+#: src/js/comment-editing/editing.js:158
+#: src/js/comment-editing/editing.js:182
 msgid "minute"
 msgid_plural "minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: dist/js/simple-comment-editing.js:305, dist/js/simple-comment-editing.js:308, dist/js/simple-comment-editing.js:323, dist/js/simple-comment-editing.min.js:1, dist/js/simple-comment-editing.min.js:1, dist/js/simple-comment-editing.min.js:1
+#: js/simple-comment-editing.js:373
+#: js/simple-comment-editing.js:376
+#: js/simple-comment-editing.js:391
+#: src/js/comment-editing/editing.js:164
+#: src/js/comment-editing/editing.js:167
+#: src/js/comment-editing/editing.js:182
 msgid "second"
 msgid_plural "seconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/includes/class-sce-admin-menu-output.php:21
-msgid "Your options have been saved."
+#: src/js/react/views/integrations/Mailchimp.js:34
+#: src/js/react/views/integrations/Mailchimp.js:418
+#: src/js/react/views/integrations/Mailchimp.js:429
+msgid "Mailchimp"
 msgstr ""
 
-#: src/includes/class-sce-admin-menu-output.php:40, src/includes/class-sce-admin.php:62, src/includes/class-sce-admin.php:62
-msgid "Simple Comment Editing"
+#: src/js/react/views/integrations/Mailchimp.js:179
+msgid "Sign Up Label"
 msgstr ""
 
-#: src/includes/class-sce-admin-menu-output.php:41
-msgid "Welcome to Simple Commment Editing!"
+#: src/js/react/views/integrations/Mailchimp.js:188
+msgid "Sign-up Label"
 msgstr ""
 
-#: src/includes/class-sce-admin-menu-output.php:42
-msgid "For more options, stats, restoration of edited comments, and more configuration, please try: "
+#: src/js/react/views/integrations/Mailchimp.js:194
+msgid "This text will be shown in the comment section when a user leaves a comment."
 msgstr ""
 
-#: src/includes/class-sce-admin-menu-output.php:42
-msgid "Simple Comment Editing Options"
+#: src/js/react/views/integrations/Mailchimp.js:203
+#: src/js/react/views/integrations/Mailchimp.js:286
+#: src/js/react/views/integrations/Mailchimp.js:362
+msgid "This field is a required field."
 msgstr ""
 
-#: src/includes/class-sce-admin-menu-output.php:46
-msgid "Edit Timer in Minutes"
+#: src/js/react/views/integrations/Mailchimp.js:221
+msgid "Sign Up Checkbox"
 msgstr ""
 
-#: src/includes/class-sce-admin-menu-output.php:54
-msgid "Save Options"
+#: src/js/react/views/integrations/Mailchimp.js:228
+msgid "Sign Up Checkbox Checked"
 msgstr ""
 
-#: src/includes/class-sce-admin.php:89
-msgid "Settings"
+#: src/js/react/views/integrations/Mailchimp.js:234
+msgid "Check the newsletter checkbox by default (not recommended)."
 msgstr ""
 
-#: src/simple-comment-editing.php:27
-msgid "You do not have permission to edit this comment."
+#: src/js/react/views/integrations/Mailchimp.js:254
+msgid "Mailchimp Lists"
 msgstr ""
 
-#: src/simple-comment-editing.php:28
-msgid "You can no longer edit this comment."
+#: src/js/react/views/integrations/Mailchimp.js:262
+msgid "Select a default list"
 msgstr ""
 
-#: src/simple-comment-editing.php:29
-msgid "Timer could not be stopped."
+#: src/js/react/views/integrations/Mailchimp.js:263
+msgid "Select a default list that will be used for your newsletter prompt"
 msgstr ""
 
-#: src/simple-comment-editing.php:30
-msgid "Your comment cannot be empty. Delete instead?"
+#: src/js/react/views/integrations/Mailchimp.js:307
+msgid "Server Prefix"
 msgstr ""
 
-#: src/simple-comment-editing.php:31
-msgid "This comment was marked as spam."
+#: src/js/react/views/integrations/Mailchimp.js:315
+msgid "Mailchimp Server Prefix"
 msgstr ""
 
-#: src/simple-comment-editing.php:157
-msgid "Click to Edit"
+#: src/js/react/views/integrations/Mailchimp.js:322
+msgid "A server prefix is automatically generated for API access."
 msgstr ""
 
-#: src/simple-comment-editing.php:178
-msgid "Loading"
+#: src/js/react/views/integrations/Mailchimp.js:338
+msgid "API Key"
 msgstr ""
 
-#: src/simple-comment-editing.php:212
-msgid "Save"
+#: src/js/react/views/integrations/Mailchimp.js:346
+msgid "Mailchimp API Key"
 msgstr ""
 
-#: src/simple-comment-editing.php:223
-msgid "Cancel"
+#: src/js/react/views/integrations/Mailchimp.js:352
+msgid "Enter your Mailchimp API Key in order to choose a default list."
 msgstr ""
 
-#: src/simple-comment-editing.php:234
-msgid "Delete"
+#: src/js/react/views/integrations/Mailchimp.js:371
+msgid "No Mailchimp lists for the API key were found."
 msgstr ""
 
-#: src/simple-comment-editing.php:343
-msgid "Do you want to delete this comment?"
+#: src/js/react/views/integrations/Mailchimp.js:398
+msgid "Saving…"
 msgstr ""
 
-#: src/simple-comment-editing.php:344
-msgid "Your comment has been removed."
+#: src/js/react/views/integrations/Mailchimp.js:401
+msgid "Saved"
 msgstr ""
 
-#: src/simple-comment-editing.php:345
-msgid "Your comment could not be deleted"
+#: src/js/react/views/integrations/Mailchimp.js:403
+msgid "Save Mailchimp Options"
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:408
+msgid "Disconnecting…"
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:411
+msgid "Disconnected"
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:413
+msgid "Disconnect From Mailchimp"
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:420
+msgid "When someone leaves a comment, they can be given the option to subscribe to your newsletter on Mailchimp."
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:436
+msgid "Enable Mailchimp"
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:443
+msgid "Enable or Disable the Mailchimp Integration."
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:501
+msgid "There are form validation errors. Please correct them above."
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:511
+msgid "Your settings have been saved."
+msgstr ""
+
+#: src/js/react/views/integrations/Mailchimp.js:518
+msgid "Your settings have been reset."
 msgstr ""

@@ -7,7 +7,9 @@
     "start": "webpack --watch --env mode=development",
     "dev": "webpack --mode development --env mode=development",
     "build": "webpack --mode production --env mode=production",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "i18n:pot": "bash scripts/generate-pot.sh",
+    "i18n:check": "bash scripts/check-i18n.sh"
   },
   "repository": {
     "type": "git",
