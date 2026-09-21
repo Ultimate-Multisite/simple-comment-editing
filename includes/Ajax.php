@@ -388,7 +388,9 @@ class Ajax {
 		 * @param int     Post ID
 		 * @param int     Comment ID
 		 */
+		remove_filter( 'comment_text', array( Simple_Comment_Editing::get_instance(), 'add_edit_interface' ), 1000 );
 		$comment_content_to_return = apply_filters( 'sce_return_comment_text', Functions::get_comment_content( $comment_to_return ), $comment_to_return, $post_id, $comment_id );
+		add_filter( 'comment_text', array( Simple_Comment_Editing::get_instance(), 'add_edit_interface' ), 1000, 2 );
 
 		// Ajax response.
 		$return['comment_text'] = stripslashes( $comment_content_to_return );

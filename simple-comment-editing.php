@@ -61,6 +61,20 @@ class Simple_Comment_Editing {
 	private $mailchimp_api = 'https://<sp>.api.mailchimp.com/3.0/';
 
 	/**
+	 * Whether the core/comment-content block is currently rendering.
+	 *
+	 * @var bool
+	 */
+	private $rendering_comment_content_block = false;
+
+	/**
+	 * Deferred block comment markers and replacement markup, keyed by comment ID.
+	 *
+	 * @var array
+	 */
+	private $deferred_block_comments = array();
+
+	/**
 	 * Retrieve an instance of the class.
 	 *
 	 * @return Simple_Comment_Editing
@@ -146,6 +160,8 @@ class Simple_Comment_Editing {
 			add_filter( 'comment_excerpt', array( $this, 'add_edit_interface' ), 1000, 2 );
 			add_filter( 'comment_text', array( $this, 'add_edit_interface' ), 1000, 2 );
 			add_filter( 'thesis_comment_text', array( $this, 'add_edit_interface' ), 1000, 2 );
+			add_filter( 'render_block_context', array( $this, 'maybe_mark_comment_content_block' ), 10, 2 );
+			add_filter( 'render_block_core/comment-content', array( $this, 'restore_deferred_edit_interface' ), 10, 3 );
 		}
 
 		// Add button themes.
@@ -183,8 +199,17 @@ class Simple_Comment_Editing {
 		}
 
 		// Variables for later.
-		$original_content = $comment_content;
-		$raw_content      = $comment->comment_content; // For later usage in the textarea.
+		$original_content  = $comment_content;
+		$raw_content       = $comment->comment_content; // For later usage in the textarea.
+		$defer_after_block = $this->should_defer_for_comment_content_block( $comment );
+		$start_marker      = '';
+		$end_marker        = '';
+
+		if ( $defer_after_block ) {
+			$marker_id    = wp_generate_uuid4();
+			$start_marker = 'SCE_COMMENT_START_' . $marker_id;
+			$end_marker   = 'SCE_COMMENT_END_' . $marker_id;
+		}
 
 		// Yay, user can edit - Add the initial wrapper.
 		$comment_wrapper = sprintf( '<div id="sce-comment%d" class="sce-comment">%s</div>', $comment_id, $comment_content );
@@ -420,9 +445,95 @@ class Simple_Comment_Editing {
 		*/
 		$sce_content = apply_filters( 'sce_content', $sce_content, $comment_id );
 
+		if ( $defer_after_block ) {
+			$this->deferred_block_comments[ $comment_id ] = array(
+				'start'       => $start_marker,
+				'end'         => $end_marker,
+				'replacement' => '<div id="sce-comment' . $comment_id . '" class="sce-comment">',
+				'interface'   => '</div>' . $sce_content,
+			);
+
+			return $start_marker . $original_content . $end_marker;
+		}
+
 		// Return content.
 		$comment_content = $comment_wrapper . $sce_content;
 		return $comment_content;
+	}
+
+	/**
+	 * Mark when the core/comment-content block is about to render.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param array $context      The block context.
+	 * @param array $parsed_block The block being rendered.
+	 * @return array Unchanged block context.
+	 */
+	public function maybe_mark_comment_content_block( $context, $parsed_block ) {
+		$this->rendering_comment_content_block = ( isset( $parsed_block['blockName'] ) && 'core/comment-content' === $parsed_block['blockName'] );
+		return $context;
+	}
+
+	/**
+	 * Whether Core will strip the edit interface from a pending comment block.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param object $comment Comment object.
+	 * @return bool True when interface injection must be deferred.
+	 */
+	private function should_defer_for_comment_content_block( $comment ) {
+		if ( ! $this->rendering_comment_content_block ) {
+			return false;
+		}
+		if ( ! isset( $comment->comment_approved ) || '0' !== (string) $comment->comment_approved ) {
+			return false;
+		}
+
+		$commenter = wp_get_current_commenter();
+		return empty( $commenter['comment_author'] );
+	}
+
+	/**
+	 * Restore trusted SCE markup after Core sanitizes a pending comment block.
+	 *
+	 * Plain-text markers pass through Core's wp_kses() call, allowing exact string
+	 * replacement without parsing or reserializing the rendered block HTML.
+	 *
+	 * @since 3.4.1
+	 *
+	 * @param string    $block_content The rendered block HTML.
+	 * @param array     $parsed_block  The parsed block.
+	 * @param \WP_Block $block         The block instance.
+	 * @return string Filtered block HTML.
+	 */
+	public function restore_deferred_edit_interface( $block_content, $parsed_block, $block ) {
+		$this->rendering_comment_content_block = false;
+
+		if ( ! ( $block instanceof \WP_Block ) || ! isset( $block->context['commentId'] ) ) {
+			return $block_content;
+		}
+
+		$comment_id = absint( $block->context['commentId'] );
+		if ( empty( $this->deferred_block_comments[ $comment_id ] ) ) {
+			return $block_content;
+		}
+
+		$deferred = $this->deferred_block_comments[ $comment_id ];
+		unset( $this->deferred_block_comments[ $comment_id ] );
+
+		$has_start = false !== strpos( $block_content, $deferred['start'] );
+		$has_end   = false !== strpos( $block_content, $deferred['end'] );
+		if ( ! $has_start || ! $has_end ) {
+			return str_replace( array( $deferred['start'], $deferred['end'] ), '', $block_content );
+		}
+
+		return str_replace(
+			array( $deferred['start'], $deferred['end'] ),
+			array( $deferred['replacement'], $deferred['interface'] ),
+			$block_content
+		);
 	}
 
 	/**
