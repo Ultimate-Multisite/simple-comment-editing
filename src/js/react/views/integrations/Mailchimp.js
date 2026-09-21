@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+/* global sceIntegrations */
 import React, { useState, Suspense, useEffect } from 'react';
 import { useForm, Controller, useWatch, useFormState } from 'react-hook-form';
 import classNames from 'classnames';
@@ -85,7 +86,7 @@ const Interface = ( props ) => {
 	};
 
 	useEffect( () => {
-		const apiKey = getValues( 'apiKey' );
+		const apiKey = formValues.apiKey;
 		if ( '' === apiKey || null === apiKey ) {
 			return;
 		}
@@ -106,7 +107,7 @@ const Interface = ( props ) => {
 			shouldValidate: false,
 			shouldTouch: false,
 		} );
-	}, [ formValues.apiKey ] );
+	}, [ formValues.apiKey, setValue ] );
 
 	const onSubmit = ( formData ) => {
 		setSaving( true );

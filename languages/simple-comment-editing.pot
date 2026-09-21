@@ -61,7 +61,7 @@ msgstr ""
 #: includes/Admin/Tabs/Integrations.php:199
 #: includes/Admin/Tabs/Integrations.php:331
 #: includes/Options.php:151
-#: src/js/react/views/integrations/Mailchimp.js:160
+#: src/js/react/views/integrations/Mailchimp.js:161
 msgid "Sign Up for Updates"
 msgstr ""
 
@@ -509,126 +509,126 @@ msgid_plural "seconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/js/react/views/integrations/Mailchimp.js:34
-#: src/js/react/views/integrations/Mailchimp.js:418
-#: src/js/react/views/integrations/Mailchimp.js:429
+#: src/js/react/views/integrations/Mailchimp.js:35
+#: src/js/react/views/integrations/Mailchimp.js:419
+#: src/js/react/views/integrations/Mailchimp.js:430
 msgid "Mailchimp"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:179
+#: src/js/react/views/integrations/Mailchimp.js:180
 msgid "Sign Up Label"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:188
+#: src/js/react/views/integrations/Mailchimp.js:189
 msgid "Sign-up Label"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:194
+#: src/js/react/views/integrations/Mailchimp.js:195
 msgid "This text will be shown in the comment section when a user leaves a comment."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:203
-#: src/js/react/views/integrations/Mailchimp.js:286
-#: src/js/react/views/integrations/Mailchimp.js:362
+#: src/js/react/views/integrations/Mailchimp.js:204
+#: src/js/react/views/integrations/Mailchimp.js:287
+#: src/js/react/views/integrations/Mailchimp.js:363
 msgid "This field is a required field."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:221
+#: src/js/react/views/integrations/Mailchimp.js:222
 msgid "Sign Up Checkbox"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:228
+#: src/js/react/views/integrations/Mailchimp.js:229
 msgid "Sign Up Checkbox Checked"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:234
+#: src/js/react/views/integrations/Mailchimp.js:235
 msgid "Check the newsletter checkbox by default (not recommended)."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:254
+#: src/js/react/views/integrations/Mailchimp.js:255
 msgid "Mailchimp Lists"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:262
+#: src/js/react/views/integrations/Mailchimp.js:263
 msgid "Select a default list"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:263
+#: src/js/react/views/integrations/Mailchimp.js:264
 msgid "Select a default list that will be used for your newsletter prompt"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:307
+#: src/js/react/views/integrations/Mailchimp.js:308
 msgid "Server Prefix"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:315
+#: src/js/react/views/integrations/Mailchimp.js:316
 msgid "Mailchimp Server Prefix"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:322
+#: src/js/react/views/integrations/Mailchimp.js:323
 msgid "A server prefix is automatically generated for API access."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:338
+#: src/js/react/views/integrations/Mailchimp.js:339
 msgid "API Key"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:346
+#: src/js/react/views/integrations/Mailchimp.js:347
 msgid "Mailchimp API Key"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:352
+#: src/js/react/views/integrations/Mailchimp.js:353
 msgid "Enter your Mailchimp API Key in order to choose a default list."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:371
+#: src/js/react/views/integrations/Mailchimp.js:372
 msgid "No Mailchimp lists for the API key were found."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:398
+#: src/js/react/views/integrations/Mailchimp.js:399
 msgid "Saving…"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:401
+#: src/js/react/views/integrations/Mailchimp.js:402
 msgid "Saved"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:403
+#: src/js/react/views/integrations/Mailchimp.js:404
 msgid "Save Mailchimp Options"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:408
+#: src/js/react/views/integrations/Mailchimp.js:409
 msgid "Disconnecting…"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:411
+#: src/js/react/views/integrations/Mailchimp.js:412
 msgid "Disconnected"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:413
+#: src/js/react/views/integrations/Mailchimp.js:414
 msgid "Disconnect From Mailchimp"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:420
+#: src/js/react/views/integrations/Mailchimp.js:421
 msgid "When someone leaves a comment, they can be given the option to subscribe to your newsletter on Mailchimp."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:436
+#: src/js/react/views/integrations/Mailchimp.js:437
 msgid "Enable Mailchimp"
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:443
+#: src/js/react/views/integrations/Mailchimp.js:444
 msgid "Enable or Disable the Mailchimp Integration."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:501
+#: src/js/react/views/integrations/Mailchimp.js:502
 msgid "There are form validation errors. Please correct them above."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:511
+#: src/js/react/views/integrations/Mailchimp.js:512
 msgid "Your settings have been saved."
 msgstr ""
 
-#: src/js/react/views/integrations/Mailchimp.js:518
+#: src/js/react/views/integrations/Mailchimp.js:519
 msgid "Your settings have been reset."
 msgstr ""
