@@ -1,3 +1,20 @@
+<!-- aidevops:badges:start -->
+<!-- managed by aidevops badges; edit the template, not this block -->
+<!-- Build & Quality Status -->
+[![GitHub Actions](https://github.com/Ultimate-Multisite/simple-comment-editing/actions/workflows/loc-badge.yml/badge.svg?branch=master)](https://github.com/Ultimate-Multisite/simple-comment-editing/actions/workflows/loc-badge.yml)
+
+<!-- License & Legal -->
+[![License](https://img.shields.io/badge/license-see%20file-yellow.svg)](https://github.com/Ultimate-Multisite/simple-comment-editing/blob/master/LICENSE)
+
+<!-- Repository Metrics -->
+[![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)
+[![Languages by lines of code](docs/metrics/badges/languages.svg)](docs/metrics/repo-metrics.md)
+[![Dependencies](docs/metrics/badges/dependencies.svg)](docs/metrics/repo-metrics.md)
+
+<!-- Project Links -->
+[![GitHub repository](https://img.shields.io/badge/github-repository-181717.svg?logo=github)](https://github.com/Ultimate-Multisite/simple-comment-editing)
+<!-- aidevops:badges:end -->
+
 Simple Comment Editing for WordPress
 ======================
 
@@ -624,4 +641,17 @@ Since most of the interface is hidden, it's a little hard to style.  Just place 
 ```
 Have fun leaving lots of test comments :) - Recommended is to use the filter (in the FAQ section) to temporarily increase the comment editing time.  Make sure you leave the test comments when you're not logged in.
 
+<!-- aidevops:managed-readme:start -->
+<!-- managed by aidevops; refresh with managed-readme-helper.sh sync -->
+## Star History
 
+![Ultimate-Multisite/simple-comment-editing stars over time](docs/assets/star-history.svg)
+
+## Built with aidevops
+
+This project was created and is maintained with
+[aidevops.sh](https://aidevops.sh).
+
+[View Ultimate-Multisite on GitHub](https://github.com/Ultimate-Multisite) ·
+[aidevops repository](https://github.com/marcusquinn/aidevops)
+<!-- aidevops:managed-readme:end -->

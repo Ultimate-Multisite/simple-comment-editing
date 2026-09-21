@@ -2,3 +2,10 @@ node_modules
 .DS_Store
 simple-comment-editing\.zip
 simple-comment-editing
+
+# aidevops runtime artifacts
+.agents/loop-state/
+.agents/tmp/
+.agents/memory/
+.aidevops.json
+.beads

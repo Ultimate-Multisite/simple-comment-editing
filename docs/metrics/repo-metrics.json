@@ -1,0 +1,159 @@
+{
+  "schema": "aidevops.repo-metrics.v1",
+  "schema_version": 1,
+  "generated_at": "2026-09-21T18:12:50Z",
+  "tool": {
+    "name": "aidevops repo-metrics",
+    "version": "1.0.0"
+  },
+  "repo": {
+    "name": "simple-comment-editing",
+    "slug": "Ultimate-Multisite/simple-comment-editing"
+  },
+  "summary": {
+    "source_files": 113,
+    "code": 19786,
+    "comments": 2256,
+    "blanks": 1318,
+    "languages": 8,
+    "dependencies": 885
+  },
+  "languages": [
+    {
+      "name": "JSON",
+      "files": 21,
+      "code": 12092,
+      "comments": 0,
+      "blanks": 0,
+      "percentage": 61.11,
+      "color": "#292929"
+    },
+    {
+      "name": "JavaScript",
+      "files": 48,
+      "code": 2816,
+      "comments": 395,
+      "blanks": 301,
+      "percentage": 14.23,
+      "color": "#f1e05a"
+    },
+    {
+      "name": "PHP",
+      "files": 25,
+      "code": 2609,
+      "comments": 1797,
+      "blanks": 605,
+      "percentage": 13.19,
+      "color": "#4F5D95"
+    },
+    {
+      "name": "Markdown",
+      "files": 11,
+      "code": 1101,
+      "comments": 0,
+      "blanks": 340,
+      "percentage": 5.56,
+      "color": "#083fa1"
+    },
+    {
+      "name": "SCSS",
+      "files": 2,
+      "code": 994,
+      "comments": 14,
+      "blanks": 53,
+      "percentage": 5.02,
+      "color": "#c6538c"
+    },
+    {
+      "name": "XML",
+      "files": 1,
+      "code": 106,
+      "comments": 26,
+      "blanks": 12,
+      "percentage": 0.54,
+      "color": "#0060ac"
+    },
+    {
+      "name": "YAML",
+      "files": 4,
+      "code": 36,
+      "comments": 24,
+      "blanks": 7,
+      "percentage": 0.18,
+      "color": "#cb171e"
+    },
+    {
+      "name": "SVG",
+      "files": 1,
+      "code": 32,
+      "comments": 0,
+      "blanks": 0,
+      "percentage": 0.16,
+      "color": "#6e7781"
+    }
+  ],
+  "dependencies": {
+    "direct": 33,
+    "locked": 885,
+    "total": 885,
+    "ecosystems": [
+      "composer",
+      "npm"
+    ],
+    "manifests": [
+      {
+        "path": "composer.json",
+        "ecosystem": "composer",
+        "direct": 0,
+        "locked": 0,
+        "dependencies": []
+      },
+      {
+        "path": "package.json",
+        "ecosystem": "npm",
+        "direct": 33,
+        "locked": 885,
+        "dependencies": [
+          "@babel/core",
+          "@babel/eslint-parser",
+          "@babel/plugin-proposal-class-properties",
+          "@babel/plugin-transform-arrow-functions",
+          "@babel/preset-env",
+          "@babel/preset-react",
+          "@wordpress/components",
+          "@wordpress/eslint-plugin",
+          "@wordpress/i18n",
+          "@wordpress/prettier-config",
+          "axios",
+          "babel-loader",
+          "classnames",
+          "css-loader",
+          "eslint",
+          "eslint-config-prettier",
+          "eslint-plugin-prettier",
+          "grunt",
+          "grunt-cli",
+          "grunt-contrib-compress",
+          "mini-css-extract-plugin",
+          "prop-types",
+          "qs",
+          "react",
+          "react-dom",
+          "react-hook-form",
+          "react-spinners",
+          "sass",
+          "sass-loader",
+          "use-async-resource",
+          "webpack",
+          "webpack-cli",
+          "webpack-remove-empty-scripts"
+        ]
+      }
+    ]
+  },
+  "refresh": {
+    "default_policy": "weekly scheduled refresh plus manual runs; skip generated outputs younger than 24h in managed workflows",
+    "cost_profile": "fast local git/unignored-file scan; no network by default",
+    "top_languages": 6
+  }
+}

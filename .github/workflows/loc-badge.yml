@@ -1,0 +1,47 @@
+name: Repository Metrics — generate local README data and badges
+
+# Managed by aidevops framework.
+# Upstream logic lives in: marcusquinn/aidevops/.github/workflows/loc-badge-reusable.yml
+# This caller is tiny on purpose — all logic is centralised upstream.
+#
+# What it does: generates committed local metrics in docs/metrics/:
+#   repo-metrics.json                 machine-readable app/about-page data
+#   repo-metrics.md                   human-readable table
+#   badges/loc.svg                    lines-of-code README badge
+#   badges/languages.svg              language mix README badge
+#   badges/dependencies.svg           dependency count README badge
+#
+# It runs weekly and after default-branch pushes, but skips if metrics are
+# already fresh (24h by default). It does not run on pull_request events.
+
+# Permissions ceiling for downstream repos with default_workflow_permissions: read.
+# Reusable workflow job-level permissions cannot exceed the caller's ceiling.
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/metrics/**'
+      - '.github/badges/**'
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+jobs:
+  metrics:
+    uses: marcusquinn/aidevops/.github/workflows/loc-badge-reusable.yml@main
+    with:
+      # Keep this equal to the ref on `uses:` so helper code is pinned with the reusable YAML.
+      aidevops_ref: main
+      # Optional input overrides — uncomment and edit as needed:
+      # top_n: 8
+      # skip_if_fresh_hours: 24
+      # extra_excludes: |
+      #   fixtures/
+      #   test-data/
+    # GH#20976: `secrets: inherit` only works within the same GitHub account/org.
+    # Cross-account consumers must pass secrets explicitly.
+    secrets:
+      SYNC_PAT: ${{ secrets.SYNC_PAT }}
