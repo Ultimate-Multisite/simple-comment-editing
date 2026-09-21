@@ -1,0 +1,311 @@
+# Copyright (C) 2020 Simple Comment Editing
+# This file is distributed under the same license as the Simple Comment Editing package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Simple Comment Editing\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/plugins/simple-comment-editing/\n"
+"POT-Creation-Date: 2022-03-17 10:58+0200\n"
+"PO-Revision-Date: 2022-03-17 11:11+0200\n"
+"Last-Translator: \n"
+"Language-Team: Ronald Huereca <ronald@mediaron.com\n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
+"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.4.2\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+
+#: includes/admin/class-admin-settings.php:45
+msgid "Settings"
+msgstr "Asetukset"
+
+#: includes/admin/class-admin-settings.php:50
+msgid "Support"
+msgstr "Tuki"
+
+#: includes/admin/class-admin-settings.php:55
+msgid "Sponsor"
+msgstr "Sponsorointi"
+
+#: includes/admin/class-admin-settings.php:262
+msgid ""
+"Supercharge your comment section by allowing your users to edit their "
+"comments."
+msgstr ""
+"Muokkaa kommenttiosiota antamalla käyttäjille luvan muokata ja poistaa "
+"kommenttejaan."
+
+#: includes/admin/class-admin-settings.php:282
+#: includes/admin/class-admin-settings.php:283 includes/class-functions.php:260
+#: includes/class-functions.php:310
+msgid "Simple Comment Editing"
+msgstr ""
+
+#: includes/admin/tabs/class-settings.php:46
+msgctxt "Tab label as settings"
+msgid "Settings"
+msgstr "Asetukset"
+
+#: includes/admin/tabs/class-settings.php:80
+msgid "Your options have been saved."
+msgstr "Asetuksesi on tallennettu."
+
+#: includes/admin/tabs/class-settings.php:89
+msgid "Welcome to Simple Comment Editing!"
+msgstr "Tervetuloa kommenttien muokkaus lisäosaan!"
+
+#: includes/admin/tabs/class-settings.php:90
+msgid ""
+"For more options, stats, restoration of edited comments, and more "
+"configuration, please try: "
+msgstr ""
+"Lisää asetuksia, tilastoja, päivitettyjen kommenttien uudelleen asettamista "
+"ja muuta: "
+
+#: includes/admin/tabs/class-settings.php:90
+msgid "Simple Comment Editing Options"
+msgstr "Simple Comment Editing asetukset"
+
+#: includes/admin/tabs/class-settings.php:94
+msgid "Edit Timer in Minutes"
+msgstr "Muokkaa ajastinta minuuteissa"
+
+#: includes/admin/tabs/class-settings.php:100
+msgid "Timer Appearance"
+msgstr "Ajastimen ulkoasu"
+
+#: includes/admin/tabs/class-settings.php:103
+msgid "Words"
+msgstr "Sanat"
+
+#: includes/admin/tabs/class-settings.php:104
+msgid "Compact"
+msgstr "Kompakti"
+
+#: includes/admin/tabs/class-settings.php:109
+msgid "Button Theme"
+msgstr "Painikkeiden teema"
+
+#: includes/admin/tabs/class-settings.php:112
+msgid "None"
+msgstr "Ei mitään"
+
+#: includes/admin/tabs/class-settings.php:113
+msgid "Regular"
+msgstr "Oletus"
+
+#: includes/admin/tabs/class-settings.php:114
+msgid "Dark"
+msgstr "Tumma"
+
+#: includes/admin/tabs/class-settings.php:115
+msgid "Light"
+msgstr "Vaalea"
+
+#: includes/admin/tabs/class-settings.php:118
+msgid ""
+"Allow icons for the buttons. Recommended if you have selected a button theme."
+msgstr ""
+"Salli ikonit painikkeissa. Suositeltavaa, jos olet valinnat painikkeiden "
+"teeman."
+
+#: includes/admin/tabs/class-settings.php:122
+msgid "Button Theme Preview:"
+msgstr "Painikkeen teeman esikatselu:"
+
+#: includes/admin/tabs/class-settings.php:125
+msgid "Default Theme"
+msgstr "Oletus teema"
+
+#: includes/admin/tabs/class-settings.php:125
+msgid "Dark Theme"
+msgstr "Tumma teema"
+
+#: includes/admin/tabs/class-settings.php:125
+msgid "Light Theme"
+msgstr "Vaalea teema"
+
+#: includes/admin/tabs/class-settings.php:141
+msgid "Save Options"
+msgstr "Päivitä asetukset"
+
+#: includes/admin/tabs/class-support.php:46
+msgctxt "Tab label as support"
+msgid "Help"
+msgstr "Apua"
+
+#: includes/admin/tabs/class-support.php:101
+msgid ""
+"SCE is pretty simple. SCE Options adds many more features. You can get a 1-"
+"Site license for free. Just follow the link below."
+msgstr ""
+"SCE is helppokäyttöinen. SCE asetukset lisäävät monia ominaisuuksia. Yhden "
+"sivun lisenssi on ilmainen. Klikkaa linkkiä alta."
+
+#: includes/admin/tabs/class-support.php:105
+msgid "Visit SCE Options"
+msgstr "Mene SCE asetuksiin"
+
+#: includes/admin/tabs/class-support.php:110
+msgid "Get Support On the WordPress Plugin Directory"
+msgstr "Hae apua WordPressin lisäosahakemistosta"
+
+#: includes/admin/tabs/class-support.php:114
+msgid ""
+"The best way to receive support is via the official WordPress Plugin "
+"Directory support forum."
+msgstr "Paras tapa saada apua on WordPressin lisäosahakemiston tukifoorumi."
+
+#: includes/admin/tabs/class-support.php:118
+msgid "Open a Support Topic"
+msgstr "Avaa tukitiketti"
+
+#: includes/admin/tabs/class-support.php:123
+msgid "File a GitHub Issue"
+msgstr "Tee ilmoitus virheestä GitHubiin"
+
+#: includes/admin/tabs/class-support.php:127
+msgid ""
+"Feature requests or modifications to existing behavior can be opened on "
+"GitHub."
+msgstr "Pyynnöt liittyen uusiin  ominaisuuksiin voi tehdä GitHubissa."
+
+#: includes/admin/tabs/class-support.php:131
+msgid "Open a GitHub Issue"
+msgstr "Avaa uusi GitHub kysymys"
+
+#: includes/admin/tabs/class-support.php:136
+msgid "Show Your Support"
+msgstr "Näytä tukesi"
+
+#: includes/admin/tabs/class-support.php:140
+msgid "Every cent counts and will help this project monetarily."
+msgstr "Jokainen sentti auttaa tukemaan tätä projektia."
+
+#: includes/admin/tabs/class-support.php:144
+msgid "Sponsor This Plugin"
+msgstr "Sponsoroi tätä lisäosaa"
+
+#: includes/admin/tabs/class-support.php:149
+msgid "Documentation"
+msgstr "Dokumentaatio"
+
+#: includes/admin/tabs/class-support.php:153
+msgid "The documentation for the plugin displays its capabilities."
+msgstr "Dokumentaatiosta löydät tietoa lisäosan ominaisuuksista."
+
+#: includes/admin/tabs/class-support.php:157
+msgid "View the Documentation"
+msgstr "Katso dokumentaatiota"
+
+#: includes/admin/tabs/class-support.php:162
+#: includes/admin/tabs/class-support.php:170
+msgid "Help Rate This Plugin"
+msgstr "Auta arvostelemalla tämä lisäosa"
+
+#: includes/admin/tabs/class-support.php:166
+msgid ""
+"If you find this plugin useful, please consider leaving a star rating on "
+"WordPress.org."
+msgstr ""
+"Jos koet, että tämä lisäosa on hyödyllinen, niin jätä siitä arvostelu "
+"WordPress.org-sivulla."
+
+#: includes/class-functions.php:41
+msgid "Unknown type."
+msgstr "Tuntematon tyyyppi."
+
+#: includes/class-functions.php:44
+msgid "Attribute not found."
+msgstr "Attribuuttia ei löytynyt."
+
+#: includes/class-functions.php:278
+msgid "Allow your users to edit comments."
+msgstr "Salli käyttäjien muokata kommentteja."
+
+#: simple-comment-editing.php:30
+msgid "You do not have permission to edit this comment."
+msgstr "Sinulla ei ole lupaa muokata tätä kommenttia."
+
+#: simple-comment-editing.php:31
+msgid "You can no longer edit this comment."
+msgstr "Et voi enää muokata tätä kommenttia."
+
+#: simple-comment-editing.php:32
+msgid "Timer could not be stopped."
+msgstr "Ajastinta ei voitu pysäyttää."
+
+#: simple-comment-editing.php:33
+msgid "Your comment cannot be empty. Delete instead?"
+msgstr "Kommenttisi ei voi olla tyhjä. Poistetaanko kommentti sen sijaan?"
+
+#: simple-comment-editing.php:34
+msgid "This comment was marked as spam."
+msgstr "Tämä kommentti on merkattu roskapostiksi."
+
+#: simple-comment-editing.php:178
+msgid "Click to Edit"
+msgstr "Klikkaa muokkaaksesi"
+
+#: simple-comment-editing.php:189
+msgid "Delete Comment"
+msgstr "Poista kommentti"
+
+#: simple-comment-editing.php:223
+msgid "Loading"
+msgstr "Ladataan"
+
+#: simple-comment-editing.php:257
+msgid "Save"
+msgstr "Tallenna"
+
+#: simple-comment-editing.php:268
+msgid "Cancel"
+msgstr "Peru"
+
+#: simple-comment-editing.php:279
+msgid "Delete"
+msgstr "Poista"
+
+#: simple-comment-editing.php:462
+msgid "and"
+msgstr "ja"
+
+#: simple-comment-editing.php:463
+msgid "Do you want to delete this comment?"
+msgstr "Haluatko poistaa tämän kommentin?"
+
+#: simple-comment-editing.php:464
+msgid "Your comment has been removed."
+msgstr "Kommentti on poistettu."
+
+#: simple-comment-editing.php:465
+msgid "Your comment could not be deleted"
+msgstr "Kommenttiasi ei voitu poistaa"
+
+#~ msgid "day"
+#~ msgid_plural "days"
+#~ msgstr[0] "päivä"
+#~ msgstr[1] "päivää"
+
+#~ msgid "hour"
+#~ msgid_plural "hours"
+#~ msgstr[0] "tunti"
+#~ msgstr[1] "tuntia"
+
+#~ msgid "minute"
+#~ msgid_plural "minutes"
+#~ msgstr[0] "minuutti"
+#~ msgstr[1] "minuuttia"
+
+#~ msgid "second"
+#~ msgid_plural "seconds"
+#~ msgstr[0] "sekunti"
+#~ msgstr[1] "sekuntia"
