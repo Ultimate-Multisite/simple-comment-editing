@@ -101,10 +101,11 @@ class Integrations extends Tabs {
 				wp_enqueue_script(
 					'sce-integrations',
 					Functions::get_plugin_url( 'dist/integrations-admin.js' ),
-					array(),
+					array( 'wp-i18n' ),
 					Functions::get_plugin_version(),
 					true
 				);
+				wp_set_script_translations( 'sce-integrations', 'simple-comment-editing' );
 				wp_localize_script(
 					'sce-integrations',
 					'sceIntegrations',

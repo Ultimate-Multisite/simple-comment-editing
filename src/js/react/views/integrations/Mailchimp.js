@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
+/* global sceIntegrations */
 import React, { useState, Suspense, useEffect } from 'react';
 import { useForm, Controller, useWatch, useFormState } from 'react-hook-form';
 import classNames from 'classnames';
 import { useAsyncResource } from 'use-async-resource';
-import { __, sprintf } from '@wordpress/i18n';
 import BeatLoader from 'react-spinners/BeatLoader';
 
 import {
@@ -17,6 +17,8 @@ import ClipboardCheck from '../../components/icons/ClipboardCheck';
 import sendCommand from '../../../SendCommand';
 import CircularExclamationIcon from '../../components/icons/CircularExplanation';
 import Notice from '../../components/Notice';
+
+const { __, sprintf } = wp.i18n;
 
 const retrieveAvatarOptions = () => {
 	return sendCommand( 'sce_get_mailchimp_options', {
@@ -84,7 +86,7 @@ const Interface = ( props ) => {
 	};
 
 	useEffect( () => {
-		const apiKey = getValues( 'apiKey' );
+		const apiKey = formValues.apiKey;
 		if ( '' === apiKey || null === apiKey ) {
 			return;
 		}
@@ -105,7 +107,7 @@ const Interface = ( props ) => {
 			shouldValidate: false,
 			shouldTouch: false,
 		} );
-	}, [ formValues.apiKey ] );
+	}, [ formValues.apiKey, setValue ] );
 
 	const onSubmit = ( formData ) => {
 		setSaving( true );
@@ -199,7 +201,7 @@ const Interface = ( props ) => {
 					/>
 					{ 'required' === errors.signUpLabel?.type && (
 						<Notice
-							message={ __( 'This field is a required field.' ) }
+							message={ __( 'This field is a required field.', 'simple-comment-editing' ) }
 							status="error"
 							politeness="assertive"
 							inline={ true }
@@ -282,7 +284,7 @@ const Interface = ( props ) => {
 					/>
 					{ 'required' === errors.selectedList?.type && (
 						<Notice
-							message={ __( 'This field is a required field.' ) }
+							message={ __( 'This field is a required field.', 'simple-comment-editing' ) }
 							status="error"
 							politeness="assertive"
 							inline={ true }
@@ -358,7 +360,7 @@ const Interface = ( props ) => {
 					/>
 					{ 'required' === errors.apiKey?.type && (
 						<Notice
-							message={ __( 'This field is a required field.' ) }
+							message={ __( 'This field is a required field.', 'simple-comment-editing' ) }
 							status="error"
 							politeness="assertive"
 							inline={ true }
@@ -367,7 +369,10 @@ const Interface = ( props ) => {
 					) }
 					{ 'noLists' === errors.apiKey?.type && (
 						<Notice
-							message={ __( 'No Mailchimp lists for the API key were found.' ) }
+							message={ __(
+								'No Mailchimp lists for the API key were found.',
+								'simple-comment-editing'
+							) }
 							status="error"
 							politeness="assertive"
 							inline={ true }

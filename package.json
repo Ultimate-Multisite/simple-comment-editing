@@ -7,7 +7,8 @@
     "start": "webpack --watch --env mode=development",
     "dev": "webpack --mode development --env mode=development",
     "build": "webpack --mode production --env mode=production",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "i18n:pot": "wp i18n make-pot . languages/simple-comment-editing.pot --slug=simple-comment-editing --domain=simple-comment-editing --exclude=dist,lib,languages,node_modules"
   },
   "repository": {
     "type": "git",
