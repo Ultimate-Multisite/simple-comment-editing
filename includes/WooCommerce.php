@@ -32,7 +32,7 @@ class WooCommerce {
 	/**
 	 * Add the WooCommerce rating field.
 	 *
-	 * @param array      $fields Fields.
+	 * @param array      $return Return data.
 	 * @param WP_Comment $comment Comment.
 	 * @param int        $post_id Post ID.
 	 * @param int        $comment_id Comment ID.
