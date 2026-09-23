@@ -32,10 +32,10 @@ class WooCommerce {
 	/**
 	 * Add the WooCommerce rating field.
 	 *
-	 * @param array      $return Return data.
-	 * @param WP_Comment $comment Comment.
-	 * @param int        $post_id Post ID.
-	 * @param int        $comment_id Comment ID.
+	 * @param array       $return Return data.
+	 * @param \WP_Comment $comment Comment.
+	 * @param int         $post_id Post ID.
+	 * @param int         $comment_id Comment ID.
 	 *
 	 * @return array
 	 */
@@ -59,10 +59,10 @@ class WooCommerce {
 	/**
 	 * Save the WooCommerce rating field.
 	 *
-	 * @param WP_Comment $comment_to_save Comment to save.
-	 * @param int        $post_id Post ID.
-	 * @param int        $comment_id Comment ID.
-	 * @param WP_Comment $original_comment Original comment.
+	 * @param array       $comment_to_save Comment to save.
+	 * @param int         $post_id Post ID.
+	 * @param int         $comment_id Comment ID.
+	 * @param \WP_Comment $original_comment Original comment.
 	 */
 	public static function save_woocommerce_rating_fields( $comment_to_save, $post_id, $comment_id, $original_comment ) {
 		if ( 'review' !== $comment_to_save['comment_type'] ) {
@@ -95,10 +95,10 @@ class WooCommerce {
 	/**
 	 * Add WooCommerce fields to the comment form.
 	 *
-	 * @param string     $markup HTML markup to return.
-	 * @param int        $post_id Post ID.
-	 * @param int        $comment_id Comment ID.
-	 * @param WP_Comment $comment WP_Comment object.
+	 * @param string      $markup HTML markup to return.
+	 * @param int         $post_id Post ID.
+	 * @param int         $comment_id Comment ID.
+	 * @param \WP_Comment $comment WP_Comment object.
 	 *
 	 * @return string HTML markup.
 	 */

@@ -1,0 +1,16 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	level: 3
+	paths:
+		- includes
+		- index.php
+		- simple-comment-editing.php
+		- uninstall.php
+	bootstrapFiles:
+		- vendor/autoload.php
+	scanFiles:
+		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+		- phpstan-stubs.php
+	treatPhpDocTypesAsCertain: false

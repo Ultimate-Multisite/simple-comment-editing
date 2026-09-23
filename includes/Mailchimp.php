@@ -81,9 +81,9 @@ class Mailchimp {
 	/**
 	 * Add a subscriber to mailchimp.
 	 *
-	 * @param int        $comment_id The comment ID.
-	 * @param string     $email      The email address.
-	 * @param WP_Comment $comment    The comment object.
+	 * @param int         $comment_id The comment ID.
+	 * @param string      $email      The email address.
+	 * @param \WP_Comment $comment    The comment object.
 	 *
 	 * @return bool True if the subscriber was added, false otherwise.
 	 */

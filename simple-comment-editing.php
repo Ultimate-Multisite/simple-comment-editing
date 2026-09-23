@@ -42,7 +42,7 @@ class Simple_Comment_Editing {
 	/**
 	 * Error object for WP_Error.
 	 *
-	 * @var WP_Error Error object for WP_Error.
+	 * @var \WP_Error Error object for WP_Error.
 	 */
 	public static $errors;
 
@@ -176,8 +176,8 @@ class Simple_Comment_Editing {
 	 *
 	 * Called via the comment_text or comment_excerpt filter to add the SCE editing interface to a comment.
 	 *
-	 * @param string $comment_content The comment content.
-	 * @param array  $passed_comment  The comment object.
+	 * @param string      $comment_content The comment content.
+	 * @param array|false $passed_comment The comment object.
 	 *
 	 * @since 1.0
 	 */
@@ -222,7 +222,7 @@ class Simple_Comment_Editing {
 		 *
 		 * @since 2.3.0
 		 *
-		 * @param array Array of classes for the initial wrapper
+		 * @param array $classes Array of classes for the initial wrapper.
 		 */
 		$classes = apply_filters( 'sce_wrapper_class', $classes );
 
@@ -249,7 +249,7 @@ class Simple_Comment_Editing {
 		*
 		* @since 2.0.0
 		*
-		* @param string Translated click to edit text
+		* @param string $text Translated click-to-edit text.
 		*/
 		$click_to_edit_text = apply_filters( 'sce_text_edit', __( 'Click to Edit', 'simple-comment-editing' ) );
 
@@ -260,7 +260,7 @@ class Simple_Comment_Editing {
 		*
 		* @since 2.6.0
 		*
-		* @param string Translated delete text
+		* @param string $text Translated delete text.
 		*/
 		$delete_edit_text = apply_filters( 'sce_text_edit_delete', __( 'Delete Comment', 'simple-comment-editing' ) );
 
@@ -286,9 +286,11 @@ class Simple_Comment_Editing {
 		 *
 		 * @since 2.3.0
 		 *
-		 * @param bool Whether to show the timer or not
+		 * @param bool $show_timer Whether to show the timer.
 		 */
-		if ( apply_filters( 'sce_show_timer', true ) && false === apply_filters( 'sce_unlimited_editing', false, $comment ) ) {
+		$show_timer        = apply_filters( 'sce_show_timer', true );
+		$unlimited_editing = apply_filters( 'sce_unlimited_editing', false, $comment );
+		if ( $show_timer && false === $unlimited_editing ) {
 			$sce_content .= '<span class="sce-seperator">&nbsp;&ndash;&nbsp;</span>';
 			$sce_content .= '<span class="sce-timer"></span>';
 		}
@@ -309,10 +311,10 @@ class Simple_Comment_Editing {
 		*
 		* @since 3.0.0
 		*
-		* @param string Empty string
-		* @param int post_id POST ID
-		* @param int comment_id Comment ID
-		* @param WP_Comment comment Comment object.
+		* @param string     $content    Empty string.
+		* @param int        $post_id    Post ID.
+		* @param int        $comment_id Comment ID.
+		* @param \WP_Comment $comment    Comment object.
 		*/
 		$textarea_content .= apply_filters( 'sce_extra_fields_pre', '', $post_id, $comment_id, $comment );
 		$textarea_content .= '<div class="sce-comment-textarea">';
@@ -326,9 +328,9 @@ class Simple_Comment_Editing {
 		*
 		* @since 1.5.0
 		*
-		* @param string Empty string
-		* @param int post_id POST ID
-		* @param int comment_id Comment ID
+		* @param string $content    Empty string.
+		* @param int    $post_id    Post ID.
+		* @param int    $comment_id Comment ID.
 		*/
 		$textarea_content .= apply_filters( 'sce_extra_fields', '', $post_id, $comment_id );
 
@@ -342,7 +344,7 @@ class Simple_Comment_Editing {
 		*
 		* @since 2.0.0
 		*
-		* @param string Translated save text
+		* @param string $text Translated save text.
 		*/
 		$save_text = apply_filters( 'sce_text_save', __( 'Save', 'simple-comment-editing' ) );
 
@@ -353,7 +355,7 @@ class Simple_Comment_Editing {
 		*
 		* @since 2.0.0
 		*
-		* @param string Translated cancel text
+		* @param string $text Translated cancel text.
 		*/
 		$cancel_text = apply_filters( 'sce_text_cancel', __( 'Cancel', 'simple-comment-editing' ) );
 
@@ -364,7 +366,7 @@ class Simple_Comment_Editing {
 		*
 		* @since 2.0.0
 		*
-		* @param string Translated delete text
+		* @param string $text Translated delete text.
 		*/
 		$delete_text = apply_filters( 'sce_text_delete', __( 'Delete', 'simple-comment-editing' ) );
 
@@ -375,7 +377,7 @@ class Simple_Comment_Editing {
 		 *
 		 * Add an extra item before the save button text. This is useful for adding icons.
 		 *
-		 * @param string Empty string
+		 * @param string $content Empty string.
 		 */
 		$textarea_buttons .= sprintf( '<button class="sce-comment-save">%s%s</button>', apply_filters( 'sce_button_extra_save', '' ), esc_html( $save_text ) );
 
@@ -384,7 +386,7 @@ class Simple_Comment_Editing {
 		 *
 		 * Add an extra item before the cancel button text. This is useful for adding icons.
 		 *
-		 * @param string Empty string
+		 * @param string $content Empty string.
 		 */
 		$textarea_buttons .= sprintf( '<button class="sce-comment-cancel">%s%s</button>', apply_filters( 'sce_button_extra_cancel', '' ), esc_html( $cancel_text ) );
 
@@ -393,7 +395,7 @@ class Simple_Comment_Editing {
 		 *
 		 * Add an extra item before the delete button text. This is useful for adding icons.
 		 *
-		 * @param string Empty string
+		 * @param string $content Empty string.
 		 */
 		$textarea_buttons .= self::$allow_delete ? sprintf( '<button class="sce-comment-delete">%s%s</button>', apply_filters( 'sce_button_extra_delete', '' ), esc_html( $delete_text ) ) : '';
 		$textarea_buttons .= '</div><!-- .sce-comment-edit-buttons-group -->';
@@ -403,7 +405,7 @@ class Simple_Comment_Editing {
 		 *
 		 * Filter allow you to hide the timer
 		 *
-		 * @param bool Whether to show the timer or not
+		 * @param bool $show_timer Whether to show the timer.
 		 */
 		if ( apply_filters( 'sce_show_timer', true ) ) {
 			$textarea_buttons .= '<div class="sce-timer"></div>';
@@ -634,7 +636,7 @@ class Simple_Comment_Editing {
 		 *
 		 * @since 1.5.0
 		 *
-		 * @param bool  true to load scripts, false not
+		 * @param bool $load_scripts Whether to load scripts.
 		 */
 		$load_scripts = apply_filters( 'sce_load_scripts', false );
 		if ( ! $load_scripts ) {
@@ -676,7 +678,7 @@ class Simple_Comment_Editing {
 		 *
 		 * @since 2.1.7
 		 *
-		 * @param bool true to show a confirmation, false if not
+		 * @param bool $allow_confirmation Whether to show a confirmation.
 		 */
 		$allow_delete_confirmation = (bool) apply_filters( 'sce_allow_delete_confirmation', true );
 
@@ -737,11 +739,11 @@ class Simple_Comment_Editing {
 		 * Filter: sce_can_edit_cookie_bypass
 		 * Bypass the cookie based user verification.
 		 *
-		 * @param boolean            Whether to bypass cookie authentication
-		 * @param object $comment    Comment object
-		 * @param int    $comment_id The comment ID
-		 * @param int    $post_id    The post ID of the comment
-		 * @param int    $user_id    The logged in user ID
+		 * @param bool             $bypass     Whether to bypass cookie authentication.
+		 * @param \WP_Comment|null $comment    Comment object.
+		 * @param int        $comment_id The comment ID.
+		 * @param int|string $post_id    The post ID of the comment.
+		 * @param int        $user_id    The logged in user ID.
 		 *
 		 * @return boolean
 		 */
@@ -768,7 +770,7 @@ class Simple_Comment_Editing {
 	 * @since 1.5.0
 	 *
 	 * @param string $name Cookie name.
-	 * @return string $value Cookie value.
+	 * @return string|false Cookie value, or false when absent.
 	 */
 	private function get_cookie_value( $name ) {
 		if ( isset( $_COOKIE[ $name ] ) ) {
@@ -787,7 +789,7 @@ class Simple_Comment_Editing {
 	 * @since 1.5.0
 	 *
 	 * @param int $comment_id Comment ID.
-	 * @return obj Comment Object
+	 * @return \WP_Comment|null Comment object.
 	 */
 	public static function get_comment( $comment_id ) {
 		if ( isset( $GLOBALS['comment'] ) ) {
@@ -809,7 +811,7 @@ class Simple_Comment_Editing {
 	 * @param int    $post_id Post ID.
 	 * @param int    $comment_id Comment ID.
 	 * @param string $return_action 'ajax', 'setcookie, 'removecookie'.
-	 * @return JSON Array of cookie data only returned during Ajax requests
+	 * @return void
 	 */
 	public function generate_cookie_data( $post_id = 0, $comment_id = 0, $return_action = 'ajax' ) {
 		if ( 'ajax' === $return_action ) {
@@ -838,7 +840,7 @@ class Simple_Comment_Editing {
 		 *
 		 * @since 2.7.1
 		 *
-		 * @param bool  true to use the comment IP filter.
+		 * @param bool $use_ip Whether to use the comment IP filter.
 		 */
 		if ( apply_filters( 'sce_pre_comment_user_ip', true ) ) {
 			// Props: https://github.com/timreeves.
@@ -911,8 +913,8 @@ class Simple_Comment_Editing {
 			return true;
 		}
 
-		if ( ! isset( $_COOKIE ) || empty( $_COOKIE ) ) {
-			return;
+		if ( empty( $_COOKIE ) ) {
+			return false;
 		}
 		$has_cookie = false;
 		foreach ( $_COOKIE as $cookie_name => $cookie_value ) {
@@ -931,7 +933,7 @@ class Simple_Comment_Editing {
 	 *
 	 * @since 1.0
 	 *
-	 * @param associative array $comment The results from get_comment( $id, ARRAY_A ).
+	 * @param array $comment The results from get_comment( $id, ARRAY_A ).
 	 */
 	public static function remove_comment_cookie( $comment ) {
 		if ( ! is_array( $comment ) ) {

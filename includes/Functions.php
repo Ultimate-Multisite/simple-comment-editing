@@ -26,7 +26,7 @@ class Functions {
 	/**
 	 * Checks if the plugin is on a multisite install.
 	 *
-	 * @return true if multisite, false if not.
+	 * @return bool True if multisite, false if not.
 	 */
 	public static function is_multisite() {
 		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
@@ -48,7 +48,7 @@ class Functions {
 			return self::$comment_time;
 		}
 
-		$time_do_edit = Options::get_options( false, 'timer' );
+		$time_do_edit = absint( Options::get_options( false, 'timer' ) );
 		/**
 		* Filter: sce_comment_time
 		*
@@ -71,7 +71,7 @@ class Functions {
 	 * @access private
 	 * @since 1.5.0
 	 *
-	 * @param WP_Comment $comment Comment Object.
+	 * @param \WP_Comment $comment Comment Object.
 	 * @return string Comment text
 	 */
 	public static function get_comment_content( $comment ) {
@@ -105,8 +105,8 @@ class Functions {
 		 *
 		 * @since 2.9.1
 		 *
-		 * @param bool  true If user can edit the comment
-		 * @param WP_Comment $comment Comment object user has left (may be unset)
+		 * @param bool       $can_edit If the user can edit the comment.
+		 * @param \WP_Comment $comment Comment object user has left (may be unset)
 		 * @param WP_Post    $post    Post object (may be unset)
 		 */
 		$can_edit_pre = apply_filters( 'sce_can_edit_pre', true, $comment, $post );
@@ -148,11 +148,11 @@ class Functions {
 		 *
 		 * @since 2.2.0
 		 *
-		 * @param boolean            Whether to bypass cookie authentication
-		 * @param object $comment    Comment object
-		 * @param int    $comment_id The comment ID
-		 * @param int    $post_id    The post ID of the comment
-		 * @param int    $user_id    The logged in user ID
+		 * @param bool       $bypass     Whether to bypass cookie authentication.
+		 * @param \WP_Comment $comment    Comment object.
+		 * @param int        $comment_id The comment ID.
+		 * @param int        $post_id    The post ID of the comment.
+		 * @param int        $user_id    The logged in user ID.
 		 */
 		$cookie_bypass = apply_filters( 'sce_can_edit_cookie_bypass', $cookie_bypass, $comment, $comment_id, $post_id, $user_id );
 
@@ -184,10 +184,10 @@ class Functions {
 		 *
 		 * @since 1.3.2
 		 *
-		 * @param bool  true If user can edit the comment
-		 * @param object $comment Comment object user has left
-		 * @param int $comment_id Comment ID of the comment
-		 * @param int $post_id Post ID of the comment
+		 * @param bool       $can_edit   If the user can edit the comment.
+		 * @param \WP_Comment $comment    Comment object user has left.
+		 * @param int        $comment_id Comment ID of the comment.
+		 * @param int        $post_id    Post ID of the comment.
 		 */
 		return apply_filters( 'sce_can_edit', true, $comment, $comment_id, $post_id );
 	} //end can_edit
@@ -201,7 +201,7 @@ class Functions {
 	 * @since 1.5.0
 	 *
 	 * @param string $name Cookie name.
-	 * @return string $value Cookie value
+	 * @return string|false Cookie value, or false when absent.
 	 */
 	public static function get_cookie_value( $name ) {
 		if ( isset( $_COOKIE[ $name ] ) ) {
@@ -265,8 +265,8 @@ class Functions {
 	/**
 	 * Convert Hex to RGBA
 	 *
-	 * @param string $color   The color to convert.
-	 * @param int    $opacity The opacity.
+	 * @param string    $color   The color to convert.
+	 * @param int|false $opacity The opacity.
 	 *
 	 * @return string rgba attribute.
 	 */
@@ -388,7 +388,7 @@ class Functions {
 	/**
 	 * Return the version for the plugin.
 	 *
-	 * @return float version for the plugin.
+	 * @return string Version for the plugin.
 	 */
 	public static function get_plugin_version() {
 		return SCE_VERSION;
@@ -405,7 +405,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string URL to the plugin logo.
+		 * @param string $url URL to the plugin logo.
 		 */
 		return apply_filters( 'sce_plugin_logo_full', self::get_plugin_url( '/images/logo.png' ) );
 	}
@@ -421,7 +421,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string Plugin Author name.
+		 * @param string $author Plugin author name.
 		 */
 		$plugin_author = apply_filters( 'sce_plugin_author', 'Ronald Huereca' );
 		return $plugin_author;
@@ -438,7 +438,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string Plugin Author URI.
+		 * @param string $author_uri Plugin author URI.
 		 */
 		$plugin_author = apply_filters( 'sce_plugin_author_uri', 'https://github.com/ronalfy/simple-comment-editing' );
 		return $plugin_author;
@@ -455,7 +455,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string URL to the plugin icon.
+		 * @param string $icon_url URL to the plugin icon.
 		 */
 		return apply_filters( 'sce_plugin_icon', self::get_plugin_url( '/images/logo.png' ) );
 	}
@@ -473,7 +473,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string Plugin name.
+		 * @param string $name Plugin name.
 		 */
 		return apply_filters( 'sce_plugin_name', __( 'Simple Comment Editing', 'simple-comment-editing' ) );
 	}
@@ -491,7 +491,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string Plugin description.
+		 * @param string $description Plugin description.
 		 */
 		return apply_filters( 'sce_plugin_description', __( 'Allow your users to edit comments.', 'simple-comment-editing' ) );
 	}
@@ -507,7 +507,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string Plugin URI.
+		 * @param string $uri Plugin URI.
 		 */
 		return apply_filters( 'sce_plugin_uri', 'https://github.com/ronalfy/simple-comment-editing' );
 	}
@@ -523,7 +523,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string Plugin Menu Name.
+		 * @param string $menu_name Plugin menu name.
 		 */
 		return apply_filters( 'sce_plugin_menu_name', __( 'Simple Comment Editing', 'simple-comment-editing' ) );
 	}
@@ -539,7 +539,7 @@ class Functions {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param string Plugin Menu Name.
+		 * @param string $title Plugin menu title.
 		 */
 		return apply_filters( 'sce_plugin_menu_title', self::get_plugin_name() );
 	}
