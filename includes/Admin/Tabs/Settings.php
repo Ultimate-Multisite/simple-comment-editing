@@ -22,7 +22,7 @@ class Settings extends Tabs {
 	/**
 	 * Tab to run actions against.
 	 *
-	 * @var $tab Settings tab.
+	 * @var string Settings tab.
 	 */
 	private $tab = 'settings';
 
@@ -32,7 +32,7 @@ class Settings extends Tabs {
 	public function __construct() {
 		add_filter( 'sce_admin_tabs', array( $this, 'add_tab' ), 1, 1 );
 		add_filter( 'sce_admin_sub_tabs', array( $this, 'add_sub_tab' ), 1, 3 );
-		add_action( 'sce_output_' . sanitize_key( $this->tab ), array( $this, 'output_settings' ), 1, 3 );
+		add_action( 'sce_output_' . sanitize_key( $this->tab ), array( $this, 'output_settings' ), 1, 2 );
 	}
 
 	/**

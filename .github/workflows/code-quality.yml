@@ -39,7 +39,7 @@ jobs:
         run: npm run build
 
   phpcs:
-    name: PHPCS
+    name: PHPCS and PHPStan
     runs-on: ubuntu-latest
 
     steps:
@@ -69,3 +69,6 @@ jobs:
 
       - name: Run PHPCS
         run: composer phpcs
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --error-format=github --memory-limit=1G
