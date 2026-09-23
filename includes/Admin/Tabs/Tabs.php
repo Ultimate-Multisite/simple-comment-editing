@@ -19,7 +19,7 @@ abstract class Tabs {
 	/**
 	 * Tab to run actions against.
 	 *
-	 * @var $tab Current tab.
+	 * @var string Current tab.
 	 */
 	private $tab;
 

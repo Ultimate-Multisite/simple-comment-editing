@@ -58,8 +58,8 @@ class Ajax {
 		 *
 		 * @since 2.3.6
 		 *
-		 * @param bool Whether to allow unlimited comment editing
-		 * @param object Comment object
+		 * @param bool             $unlimited Whether to allow unlimited comment editing.
+		 * @param \WP_Comment|null $comment   Comment object.
 		 */
 		$sce_unlimited_editing = apply_filters( 'sce_unlimited_editing', false, $comment );
 		if ( $sce_unlimited_editing ) {
@@ -84,10 +84,10 @@ class Ajax {
 		 *
 		 * @since 2.8.0
 		 *
-		 * @param int    Current comment editing time.
-		 * @param string Current time format in date/time format.
-		 * @param int    Current Post ID.
-		 * @param int    Current Comment ID.
+		 * @param int    $time_left    Current comment editing time.
+		 * @param string $comment_time Current time format in date/time format.
+		 * @param int    $post_id      Current post ID.
+		 * @param int    $comment_id   Current comment ID.
 		 */
 		$time_left = apply_filters( 'sce_get_comment_time_left', $comment_time_result['comment_time'], $comment_time, $post_id, $comment_id );
 
@@ -271,7 +271,7 @@ class Ajax {
 			add_filter( 'pre_option_comment_moderation', array( static::class, 'short_circuit_comment_moderation' ) );
 			add_filter( 'pre_option_comment_whitelist', array( static::class, 'short_circuit_comment_moderation' ) );
 			add_filter( 'option_comment_moderation', '__return_false' ); // Needed to bypass moderation.
-			remove_filter( 'comment_text', array( Simple_Comment_Editing::get_instance(), 'add_edit_interface' ), 1000, 2 ); // Prevents adding in any SCE links to the comment.
+			remove_filter( 'comment_text', array( Simple_Comment_Editing::get_instance(), 'add_edit_interface' ), 1000 ); // Prevents adding in any SCE links to the comment.
 			if ( check_comment( $comment_to_save['comment_author'], $comment_to_save['comment_author_email'], $comment_to_save['comment_author_url'], $new_comment_content, $comment_to_save['comment_author_IP'], $comment_to_save['comment_agent'], $comment_to_save['comment_type'] ) ) {
 				$comment_to_save['comment_approved'] = 1;
 			} else {
@@ -355,7 +355,7 @@ class Ajax {
 		 *
 		 * Allow third parties to disable Akismet.
 		 *
-		 * @param bool true if Akismet is enabled
+		 * @param bool $enabled True if Akismet is enabled.
 		 */
 		$akismet_enabled = apply_filters( 'sce_akismet_enabled', true );
 
@@ -418,7 +418,7 @@ class Ajax {
 	 *
 	 * @param bool|mixed $option_value The option value for moderation.
 	 *
-	 * @return int Return a string so there is not a boolean value.
+	 * @return string Return a string so there is not a boolean value.
 	 */
 	public static function short_circuit_comment_moderation( $option_value ) {
 		return 'approved';

@@ -24,7 +24,7 @@ class Admin_Settings {
 	public function __construct() {
 		// For the admin interface.
 		add_action( 'admin_menu', array( $this, 'register_settings_menu' ) );
-		add_action( 'plugin_action_links_' . Functions::get_plugin_path(), array( $this, 'plugin_settings_link' ) );
+		add_filter( 'plugin_action_links_' . Functions::get_plugin_path(), array( $this, 'plugin_settings_link' ) );
 
 		// init tabs here.
 		new Tabs\Settings();
@@ -93,7 +93,7 @@ class Admin_Settings {
 			$tabs       = apply_filters( 'sce_admin_tabs', $tabs );
 			$tab_html   = '<nav class="nav-tab-wrapper">';
 			$tabs_count = count( $tabs );
-			if ( $tabs && ! empty( $tabs ) && is_array( $tabs ) ) {
+			if ( is_array( $tabs ) && count( $tabs ) > 0 ) {
 				$active_tab = Functions::get_admin_tab();
 				if ( null === $active_tab ) {
 					$active_tab = 'settings';
@@ -148,9 +148,9 @@ class Admin_Settings {
 				 *
 				 * @since 5.1.0
 				 *
-				 * @param array Associative array of tabs.
-				 * @param string Tab
-				 * @param string Sub Tab
+				 * @param array  $sub_tabs       Associative array of tabs.
+				 * @param string $current_tab    Current tab.
+				 * @param string $current_sub_tab Current sub-tab.
 				 */
 				$sub_tabs = apply_filters( 'sce_admin_sub_tabs', array(), $current_tab, $current_sub_tab );
 
@@ -158,7 +158,7 @@ class Admin_Settings {
 				if ( null === $current_tab && null === $current_sub_tab ) {
 					$current_tab = 'settings';
 				}
-				if ( $sub_tabs && ! empty( $sub_tabs ) && is_array( $sub_tabs ) ) {
+				if ( is_array( $sub_tabs ) && count( $sub_tabs ) > 0 ) {
 					if ( null === $current_sub_tab ) {
 						$current_sub_tab = '';
 					}
@@ -202,9 +202,7 @@ class Admin_Settings {
 							$sub_tab_html_array[] = sprintf( '<a href="%s" class="%s" id="mpp-tab-%s">%s</a>', esc_url( $tab_url ), esc_attr( implode( ' ', $classes ) ), esc_attr( $tab_get ), esc_html( $sub_tab['label'] ) );
 						}
 					}
-					if ( ! empty( $sub_tab_html_array ) ) {
-						echo '<nav class="mpp-sub-links">' . wp_kses_post( rtrim( implode( ' | ', $sub_tab_html_array ), ' | ' ) ) . '</nav>';
-					}
+					echo '<nav class="mpp-sub-links">' . wp_kses_post( rtrim( implode( ' | ', $sub_tab_html_array ), ' | ' ) ) . '</nav>';
 					if ( $do_subtab_action ) {
 						/**
 						 * Perform a sub tab action.
@@ -214,7 +212,6 @@ class Admin_Settings {
 						 * @since 5.1.0
 						 *
 						 * mpp_admin_sub_tab_{current_tab}_{current_sub_tab}
-						 * @param string Sub Tab
 						 */
 						do_action(
 							sprintf( // phpcs:ignore
@@ -234,9 +231,8 @@ class Admin_Settings {
 					 *
 					 * @since 5.1.0
 					 *
-					 * @param string $action Can be any action.
-					 * @param string Tab
-					 * @param string Sub Tab
+					 * @param string $current_tab     Current tab.
+					 * @param string $current_sub_tab Current sub-tab.
 					 */
 					do_action( $do_action, $current_tab, $current_sub_tab );
 				}
