@@ -938,7 +938,7 @@ class Simple_Comment_Editing {
 			return;
 		}
 
-		$this->generate_cookie_data( $comment['comment_post_ID'], $comment['comment_ID'], 'removecookie' );
+		self::get_instance()->generate_cookie_data( $comment['comment_post_ID'], $comment['comment_ID'], 'removecookie' );
 	}
 
 	/**

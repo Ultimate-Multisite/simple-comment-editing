@@ -7,7 +7,10 @@
     "start": "webpack --watch --env mode=development",
     "dev": "webpack --mode development --env mode=development",
     "build": "webpack --mode production --env mode=production",
-    "lint": "eslint ."
+    "lint": "npm run lint:js",
+    "lint:js": "eslint src/js js gruntfile.js webpack.config.js",
+    "lint:js:fix": "npm run lint:js -- --fix",
+    "lint:php": "composer phpcs"
   },
   "repository": {
     "type": "git",
@@ -48,6 +51,7 @@
     "grunt-cli": "^1.4.2",
     "grunt-contrib-compress": "^1.6.0",
     "mini-css-extract-plugin": "^1.5.0",
+    "prettier": "2.8.8",
     "prop-types": "^15.8.1",
     "qs": "^6.11.0",
     "react": "^18.2.0",
@@ -55,6 +59,7 @@
     "react-hook-form": "^7.33.1",
     "sass": "^1.32.11",
     "sass-loader": "^11.0.1",
+    "typescript": "5.0.4",
     "use-async-resource": "^2.2.2",
     "webpack": "^5.87.0",
     "webpack-cli": "^4.6.0",

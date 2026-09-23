@@ -361,10 +361,10 @@ jQuery( document ).ready( function( $ ) {
 			}
 
 			// Get minutes
-			var minutes = Math.floor( minute_to_seconds / 60 ) % 60;
-			minute_to_seconds -= minutes;
-			if ( minutes > 0 ) {
-				text += minutes + ' ' + _n( 'minute', 'minutes', minutes, 'simple-comment-editing' );
+			var remaining_minutes = Math.floor( minute_to_seconds / 60 ) % 60;
+			minute_to_seconds -= remaining_minutes;
+			if ( remaining_minutes > 0 ) {
+				text += remaining_minutes + ' ' + _n( 'minute', 'minutes', remaining_minutes, 'simple-comment-editing' );
 			}
 
 			// Get seconds

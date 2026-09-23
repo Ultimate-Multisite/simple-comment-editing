@@ -1,20 +1,32 @@
 <?xml version="1.0"?>
-<ruleset name="Info Cards Pro Standards">
+<ruleset name="Simple Comment Editing Coding Standards">
+	<description>PHP_CodeSniffer rules for the Simple Comment Editing WordPress plugin.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>*/dist/*</exclude-pattern>
+	<exclude-pattern>*/lib/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+
 	<arg name="extensions" value="php" />
+	<arg name="basepath" value="." />
 	<arg name="colors" />
-	<arg value="s" /><!-- Show sniff codes in all reports -->
+	<arg name="parallel" value="8" />
+	<arg value="ps" />
+
+	<config name="minimum_supported_wp_version" value="6.5" />
+	<config name="testVersion" value="7.2-" />
+	<config name="text_domain" value="simple-comment-editing" />
+	<config name="ignore_warnings_on_exit" value="1" />
 
 	<rule ref="WordPress">
-		<exclude name="WordPress.Files.FileName" />
-		<exclude name="Generic.Arrays.DisallowShortArraySyntax" />
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax" />
+		<exclude name="Universal.Files.SeparateFunctionsFromOO.Mixed" />
 	</rule>
 
-	<rule ref="WordPress-Docs"></rule>
-
-	<config name="testVersion" value="5.6-" />
-	<file>.</file>
-	<ini name="error_reporting" value="E_ALL &#38; ~E_DEPRECATED" />
-
-	<exclude-pattern>/node_modules/</exclude-pattern>
-	<exclude-pattern>/vendor/</exclude-pattern>
+	<rule ref="WordPress-Docs" />
+	<rule ref="PHPCompatibilityWP" />
 </ruleset>

@@ -2,19 +2,34 @@
     "name": "ronalfy/simple-comment-editing",
     "description": "Allow users to edit comments for a period of time.",
     "type": "project",
-    "license": "GPL",
+    "license": "GPL-2.0-or-later",
     "authors": [
         {
             "name": "Ronald Huereca"
         }
     ],
     "minimum-stability": "dev",
-    "config": {
-        "vendor-dir": "lib"
+    "prefer-stable": true,
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "squizlabs/php_codesniffer": "^3.7",
+        "wp-coding-standards/wpcs": "^3.0"
     },
-      "autoload": {
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
+    "autoload": {
         "psr-4": {
             "DLXPlugins\\CommentEditLite\\": "includes/"
         }
+    },
+    "scripts": {
+        "phpcs": "vendor/bin/phpcs",
+        "phpcbf": "vendor/bin/phpcbf",
+        "lint": "@phpcs"
     }
 }
