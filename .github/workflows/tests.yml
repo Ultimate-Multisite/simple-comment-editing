@@ -1,0 +1,111 @@
+name: PHPUnit
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phpunit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: PHP ${{ matrix.php }} / WP ${{ matrix.wordpress }} / multisite ${{ matrix.multisite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '7.4'
+            wordpress: '6.5'
+            multisite: '0'
+          - php: '8.2'
+            wordpress: latest
+            multisite: '0'
+          - php: '8.3'
+            wordpress: latest
+            multisite: '0'
+          - php: '8.4'
+            wordpress: latest
+            multisite: '0'
+            coverage: true
+          - php: '8.5'
+            wordpress: latest
+            multisite: '0'
+          - php: '8.4'
+            wordpress: latest
+            multisite: '1'
+    services:
+      database:
+        image: mariadb:11.4
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: '1'
+          MARIADB_DATABASE: sce_test
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      WP_VERSION: ${{ matrix.wordpress }}
+      WP_MULTISITE: ${{ matrix.multisite }}
+      WP_TEST_DB_NAME: sce_test
+      WP_TEST_DB_USER: root
+      XDEBUG_MODE: coverage
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli, mbstring
+          tools: composer:v2
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
+      - name: Install test tools
+        run: sudo apt-get update && sudo apt-get install --yes subversion
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Check actual PHP platform requirements
+        run: composer check-platform-reqs
+      - name: Install matching WordPress core and test fixtures
+        run: bash bin/install-wp-tests.sh
+      - name: Run integration suite
+        env:
+          WP_TEST_DB_HOST: 127.0.0.1:${{ job.services.database.ports['3306'] }}
+        run: composer test -- --log-junit phpunit-results.xml ${{ matrix.coverage && '--coverage-clover coverage.xml' || '--no-coverage' }}
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: phpunit-${{ matrix.php }}-wp-${{ matrix.wordpress }}-multisite-${{ matrix.multisite }}
+          path: |
+            phpunit-results.xml
+            coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  phpunit-check:
+    name: PHPUnit checks
+    needs: integration
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every PHPUnit matrix job to pass
+        env:
+          MATRIX_RESULT: ${{ needs.integration.result }}
+        run: |
+          if [ "$MATRIX_RESULT" != success ]; then
+            printf 'PHPUnit matrix did not pass: %s\n' "$MATRIX_RESULT" >&2
+            exit 1
+          fi

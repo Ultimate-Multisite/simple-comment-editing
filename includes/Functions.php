@@ -156,15 +156,7 @@ class Functions {
 		 */
 		$cookie_bypass = apply_filters( 'sce_can_edit_cookie_bypass', $cookie_bypass, $comment, $comment_id, $post_id, $user_id );
 
-		// Check to see if time has elapsed for the comment.
-		if ( ( $sce_unlimited_editing && $cookie_bypass ) || $is_comment_author ) {
-			$comment_timestamp = strtotime( $comment->comment_date );
-			$time_elapsed      = current_time( 'timestamp', get_option( 'gmt_offset' ) ) - $comment_timestamp; // phpcs:ignore.
-			$minutes_elapsed   = ( ( ( $time_elapsed % 604800 ) % 86400 ) % 3600 ) / 60;
-			if ( ( $minutes_elapsed - self::get_comment_time() ) >= 0 ) {
-				return false;
-			}
-		} elseif ( false === $cookie_bypass ) {
+		if ( ! $is_comment_author && false === $cookie_bypass ) {
 			// Set cookies for verification.
 			$comment_date_gmt = date( 'Y-m-d', strtotime( $comment->comment_date_gmt ) ); // phpcs:ignore.
 			$cookie_hash      = md5( $comment->comment_author_IP . $comment_date_gmt . $comment->user_id . $comment->comment_agent );
@@ -172,6 +164,14 @@ class Functions {
 			$cookie_value      = self::get_cookie_value( 'SimpleCommentEditing' . $comment_id . $cookie_hash );
 			$comment_meta_hash = get_comment_meta( $comment_id, '_sce', true );
 			if ( $cookie_value !== $comment_meta_hash ) {
+				return false;
+			}
+		}
+
+		// Enforce expiry server-side for both cookie owners and logged-in authors.
+		if ( ! $sce_unlimited_editing ) {
+			$comment_timestamp = strtotime( $comment->comment_date_gmt . ' UTC' );
+			if ( false === $comment_timestamp || time() - $comment_timestamp >= self::get_comment_time() * MINUTE_IN_SECONDS ) {
 				return false;
 			}
 		}

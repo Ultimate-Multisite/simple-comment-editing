@@ -17,6 +17,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Ajax {
 
 	/**
+	 * Read a scalar POST value after WordPress has added request slashes.
+	 *
+	 * @param string $key    Request field.
+	 * @param int    $filter PHP validation filter.
+	 * @return string|int|false Unslashed value, or false if validation fails.
+	 */
+	private static function get_post_input( $key, $filter = FILTER_DEFAULT ) {
+		// Each handler verifies its nonce before using these values to change data.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validation is applied below; content is sanitized by WordPress when saved.
+		$value = isset( $_POST[ $key ] ) && is_string( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '';
+		return filter_var( $value, $filter );
+	}
+
+	/**
 	 * Class runner.
 	 */
 	public static function run() {
@@ -37,8 +51,8 @@ class Ajax {
 	public static function ajax_get_time_left() {
 		check_ajax_referer( 'sce-general-ajax-nonce' );
 		global $wpdb;
-		$comment_id = absint( filter_input( INPUT_POST, 'comment_id', FILTER_VALIDATE_INT ) );
-		$post_id    = absint( filter_input( INPUT_POST, 'post_id', FILTER_VALIDATE_INT ) );
+		$comment_id = absint( self::get_post_input( 'comment_id', FILTER_VALIDATE_INT ) );
+		$post_id    = absint( self::get_post_input( 'post_id', FILTER_VALIDATE_INT ) );
 		$comment    = get_comment( $comment_id, OBJECT );
 		// Check if user can edit comment.
 		if ( ! Functions::can_edit( $comment_id, $post_id ) ) {
@@ -120,9 +134,9 @@ class Ajax {
 	 * @since 1.1.0
 	 */
 	public static function ajax_stop_timer() {
-		$comment_id = absint( filter_input( INPUT_POST, 'comment_id', FILTER_VALIDATE_INT ) );
-		$post_id    = absint( filter_input( INPUT_POST, 'post_id', FILTER_VALIDATE_INT ) );
-		$nonce      = sanitize_text_field( filter_input( INPUT_POST, 'nonce', FILTER_DEFAULT ) );
+		$comment_id = absint( self::get_post_input( 'comment_id', FILTER_VALIDATE_INT ) );
+		$post_id    = absint( self::get_post_input( 'post_id', FILTER_VALIDATE_INT ) );
+		$nonce      = sanitize_text_field( self::get_post_input( 'nonce' ) );
 
 		$return           = array();
 		$return['errors'] = false;
@@ -167,9 +181,9 @@ class Ajax {
 	 * @since 1.1.0
 	 */
 	public static function ajax_delete_comment() {
-		$comment_id = absint( filter_input( INPUT_POST, 'comment_id', FILTER_VALIDATE_INT ) );
-		$post_id    = absint( filter_input( INPUT_POST, 'post_id', FILTER_VALIDATE_INT ) );
-		$nonce      = sanitize_text_field( filter_input( INPUT_POST, 'nonce', FILTER_DEFAULT ) );
+		$comment_id = absint( self::get_post_input( 'comment_id', FILTER_VALIDATE_INT ) );
+		$post_id    = absint( self::get_post_input( 'post_id', FILTER_VALIDATE_INT ) );
+		$nonce      = sanitize_text_field( self::get_post_input( 'nonce' ) );
 
 		$return           = array();
 		$return['errors'] = false;
@@ -229,11 +243,13 @@ class Ajax {
 	 * @since 1.0
 	 */
 	public static function ajax_save_comment() {
-		define( 'DOING_SCE', true );
-		$new_comment_content = trim( filter_input( INPUT_POST, 'comment_content', FILTER_DEFAULT ) );
-		$comment_id          = absint( filter_input( INPUT_POST, 'comment_id', FILTER_VALIDATE_INT ) );
-		$post_id             = absint( filter_input( INPUT_POST, 'post_id', FILTER_VALIDATE_INT ) );
-		$nonce               = sanitize_text_field( filter_input( INPUT_POST, 'nonce', FILTER_DEFAULT ) );
+		if ( ! defined( 'DOING_SCE' ) ) {
+			define( 'DOING_SCE', true );
+		}
+		$new_comment_content = trim( self::get_post_input( 'comment_content' ) );
+		$comment_id          = absint( self::get_post_input( 'comment_id', FILTER_VALIDATE_INT ) );
+		$post_id             = absint( self::get_post_input( 'post_id', FILTER_VALIDATE_INT ) );
+		$nonce               = sanitize_text_field( self::get_post_input( 'nonce' ) );
 
 		$return           = array();
 		$return['errors'] = false;
