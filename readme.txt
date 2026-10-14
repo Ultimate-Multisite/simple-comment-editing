@@ -33,6 +33,9 @@ Allow your users to edit their comments and WooCommerce reviews for a period of 
 
 == Frequently Asked Questions ==
 
+= Can users edit WooCommerce review ratings? =
+Yes. The review editor keeps its rating control scoped to the existing review being edited, while the native new-review form continues to use WooCommerce's own rating control.
+
 = Was this plugin called Comment Edit Core? =
 Yes. The plugin has been renamed back to Simple Comment Editing.
 

@@ -32,33 +32,30 @@ window.addEventListener( 'load', () => {
 
 	addFilter( 'sce.comment.save.data', 'comment-edit-lite', ( ajaxSaveParams ) => {
 		// Get current comment.
-		const comments = document.querySelectorAll( `#sce-edit-comment${ ajaxSaveParams.comment_id }` );
+		const comment = document.querySelector( `#sce-edit-comment${ ajaxSaveParams.comment_id }` );
 
 		// Get star rating placeholder.
 		let starRating = null;
 
-		// Get the last element in the list.
-		if ( null !== comments ) {
-			// Get the comment.
-			const comment = comments[ comments.length - 1 ];
+		if ( null !== comment ) {
 			starRating = comment.querySelector( '.stars' );
 		}
-		// Check that there is a star rating.
+
+		// Only send an edited rating when the SCE review editor has a selected star and nonce.
 		if ( null !== starRating ) {
 			// Get selected star.
 			const selectedStar = starRating.querySelector( '.active' );
+			const nonceElement = comment.querySelector( '#woo_edit_comment_nonce_' + ajaxSaveParams.comment_id );
 
-			// Get star count.
-			const starCount = selectedStar.classList[ 0 ].replace( 'star-', '' );
-
-			const nonceElement = document.querySelector( '#woo_edit_comment_nonce_' + ajaxSaveParams.comment_id );
-			const nonce = nonceElement.value;
+			if ( null === selectedStar || null === nonceElement ) {
+				return ajaxSaveParams;
+			}
 
 			// Add nonce to Ajax params.
-			ajaxSaveParams.wooEditCommentNonce = nonce;
+			ajaxSaveParams.wooEditCommentNonce = nonceElement.value;
 
-			// Add star count to ajax params.
-			ajaxSaveParams.rating = starCount;
+			// Add selected rating to Ajax params.
+			ajaxSaveParams.rating = selectedStar.textContent;
 
 			return ajaxSaveParams;
 		}
@@ -535,35 +532,16 @@ window.addEventListener( 'load', () => {
 		initEditCommentButton( button );
 	} );
 
-	// WooCommerce: Get any star reviews and format.
-	const starReviewsContainers = document.querySelectorAll( '.comment-form-rating' );
-	if ( starReviewsContainers.length > 0 ) {
-		starReviewsContainers.forEach( ( starReviewsContainer ) => {
-			// Get data attribute.
-			const starReviews = starReviewsContainer.dataset.selectedRating;
-
-			// Get stars paragraph and add selected class.
-			const starsParagraph = starReviewsContainer.querySelector( '.stars' );
-			if ( null !== starsParagraph ) {
-				starsParagraph.classList.add( 'selected' );
-
-				// Get individual star container and set to active.
-				const starContainer = starsParagraph.querySelector( '.star-' + starReviews );
-				if ( null !== starContainer ) {
-					starContainer.classList.add( 'active' );
-				}
-			}
-		} );
-	}
-
 	// If jQuery is enabled, hook into WooCommerce ratings.
 	if ( 'undefined' !== typeof jQuery ) {
-		jQuery( document ).ready( function( $ ) {
-			// WooCommerce: Hook into ratings.
-			jQuery( '.comment-form-rating select' )
-				.hide()
-				.before(
-					'<p class="stars">\
+		jQuery( document ).ready( function() {
+			const initializeStarRating = ( $rating ) => {
+				const $ratingContainer = $rating.closest( '.comment-form-rating' );
+				let $stars = $ratingContainer.find( '.stars' );
+
+				if ( 0 === $stars.length ) {
+					$rating.hide().before(
+						'<p class="stars">\
 							<span>\
 								<a class="star-1" href="#">1</a>\
 								<a class="star-2" href="#">2</a>\
@@ -572,47 +550,61 @@ window.addEventListener( 'load', () => {
 								<a class="star-5" href="#">5</a>\
 							</span>\
 						</p>'
-				);
+					);
+					$stars = $ratingContainer.find( '.stars' );
+				}
+
+				const selectedRating = $ratingContainer.data( 'selected-rating' );
+				$stars.find( 'a' ).removeClass( 'active' );
+				$stars.toggleClass( 'selected', Boolean( selectedRating ) );
+				if ( selectedRating ) {
+					$stars.find( '.star-' + selectedRating ).addClass( 'active' );
+				}
+			};
+
+			// Add a control only to the SCE editor, leaving WooCommerce's new-review form untouched.
+			jQuery( '.sce-edit-comment .comment-form-rating select' ).each( function() {
+				initializeStarRating( jQuery( this ) );
+			} );
 
 			/**
 			 * Each time a text area shows, select the correct star in the interface.
 			 */
-			comment_edit_buttons.forEach( ( button ) => {
-				button.addEventListener( 'sceEditTextareaShow', ( e ) => {
-					// Select the right star.
-					const starsContainer = button.closest( '.sce-edit-comment' );
-					const dataStarRating = jQuery( starsContainer ).find( '.comment-form-rating' ).data( 'selected-rating' );
-					const $stars = jQuery( starsContainer ).find( '.stars' );
-					$stars.find( 'a' ).removeClass( 'active' );
-					$stars.addClass( 'selected' );
-					$stars.find( '.star-' + dataStarRating ).addClass( 'active' );
-				} );
+			document.addEventListener( 'sceEditTextareaShow', ( e ) => {
+				const { commentId } = e.detail;
+				const $rating = jQuery( `#sce-edit-comment${ commentId } .comment-form-rating select` );
+				if ( 0 !== $rating.length ) {
+					initializeStarRating( $rating );
+				}
+			} );
 
-				// Set up return save event.
-				button.addEventListener( 'sceCommentSavePost', ( returnData ) => {
-					const { targetButton, textarea, commentId, postId, ajaxData } = returnData.detail;
-					// Update the star rating.
-					const starsContainer = jQuery( button ).closest( '.sce-edit-comment' );
-					const $stars = starsContainer.find( '.stars' );
-					$stars.find( 'a' ).removeClass( 'active' );
-					$stars.find( '.star-' + ajaxData.rating ).addClass( 'active' );
+			// Update the rating after a successful SCE save when one was returned.
+			document.addEventListener( 'sceCommentSavePost', ( e ) => {
+				const { commentId, ajaxData } = e.detail;
+				if ( ! ajaxData.rating ) {
+					return;
+				}
 
-					// Set CSS width of star rating on frontend.
-					const $starRating = starsContainer.closest( '#comment-' + commentId ).find( '.star-rating span' );
+				const $ratingContainer = jQuery( `#sce-edit-comment${ commentId } .comment-form-rating` );
+				const $stars = $ratingContainer.find( '.stars' );
+				$stars.find( 'a' ).removeClass( 'active' );
+				$stars.find( '.star-' + ajaxData.rating ).addClass( 'active' );
+				$stars.addClass( 'selected' );
 
-					// Assign ratings to the star string represented by width.
-					$starRating.css( { width: ( ajaxData.rating * 20 ) + '%' } );
+				// Set CSS width of star rating on frontend.
+				const $starRating = $ratingContainer.closest( '#comment-' + commentId ).find( '.star-rating span' );
 
-					// Update data param.
-					const commentFormRating = starsContainer.find( '.comment-form-rating' );
-					commentFormRating.data( 'selected-rating', ajaxData.rating );
-				} );
+				// Assign ratings to the star string represented by width.
+				$starRating.css( { width: ( ajaxData.rating * 20 ) + '%' } );
+
+				// Update data param.
+				$ratingContainer.attr( 'data-selected-rating', ajaxData.rating ).data( 'selected-rating', ajaxData.rating );
 			} );
 
 			/**
 			 * When someone selects a star, update the select field and add the active class.
 			 */
-			jQuery( 'body' ).on( 'click', '.comment-form-rating p.stars a', function( e ) {
+			jQuery( 'body' ).on( 'click', '.sce-edit-comment .comment-form-rating p.stars a', function( e ) {
 				e.preventDefault();
 				const $star = jQuery( this ),
 					$rating = jQuery( this ).closest( '.comment-form-rating' ).find( 'select' ),

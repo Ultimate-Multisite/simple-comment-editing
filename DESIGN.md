@@ -257,6 +257,12 @@ The shape language is defined by **{Architectural Sharpness | Soft Modernism | P
 - Error: {description — reference `{colors.error}`}
 - Disabled: {description}
 
+### Review rating editor
+
+- The star picker is rendered only inside `.sce-edit-comment`; leave WooCommerce's native new-review rating control unchanged.
+- Retain the selected rating when the editor is reopened, and keep the select field available as the form value behind the enhanced star control.
+- Star links remain keyboard-focusable and use their visible one-to-five text as the accessible rating value.
+
 ### Links
 
 - Default: {colour + decoration}

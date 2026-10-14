@@ -45,14 +45,14 @@ class WooCommerce {
 		}
 
 		// Get the rating.
-		$rating = filter_input( INPUT_POST, 'rating', FILTER_SANITIZE_NUMBER_INT );
+		$rating = absint( filter_input( INPUT_POST, 'rating', FILTER_SANITIZE_NUMBER_INT ) );
 
 		// Check for a valid rating.
-		if ( ! $rating ) {
+		if ( $rating < 1 || $rating > 5 ) {
 			return $return;
 		}
 
-		$return['rating'] = absint( $rating );
+		$return['rating'] = $rating;
 		return $return;
 	}
 
@@ -70,11 +70,11 @@ class WooCommerce {
 		}
 
 		// Get the rating.
-		$rating = filter_input( INPUT_POST, 'rating', FILTER_SANITIZE_NUMBER_INT );
+		$rating = absint( filter_input( INPUT_POST, 'rating', FILTER_SANITIZE_NUMBER_INT ) );
 		$nonce  = sanitize_text_field( filter_input( INPUT_POST, 'wooEditCommentNonce', FILTER_DEFAULT ) );
 
 		// Check for a valid rating.
-		if ( ! $rating ) {
+		if ( $rating < 1 || $rating > 5 ) {
 			return;
 		}
 
@@ -89,7 +89,7 @@ class WooCommerce {
 		}
 
 		// User can edit comment, change rating.
-		update_comment_meta( $comment_id, 'rating', absint( $rating ) );
+		update_comment_meta( $comment_id, 'rating', $rating );
 	}
 
 	/**
@@ -109,9 +109,10 @@ class WooCommerce {
 
 		// Get current rating.
 		$rating = get_comment_meta( $comment_id, 'rating', true );
-		if ( $rating && wc_review_ratings_enabled() ) {
-				$markup  = '<div class="comment-form-rating" data-selected-rating="' . esc_attr( $rating ) . '"><label for="sce-rating-' . esc_attr( $comment_id ) . '">' . esc_html__( 'Your rating', 'simple-comment-editing' ) . ( wc_review_ratings_required() ? '&nbsp;<span class="required">*</span>' : '' ) . '</label><select name="rating" id="sce-rating-' . esc_attr( $comment_id ) . '" required>
-					<option value="" ' . selected( 'none', $rating, false ) . '>' . esc_html__( 'Rate&hellip;', 'simple-comment-editing' ) . '</option>
+		if ( wc_review_ratings_enabled() ) {
+			$required    = wc_review_ratings_required() ? ' required' : '';
+			$markup      = '<div class="comment-form-rating" data-selected-rating="' . esc_attr( $rating ) . '"><label for="sce-rating-' . esc_attr( $comment_id ) . '">' . esc_html__( 'Your rating', 'simple-comment-editing' ) . ( wc_review_ratings_required() ? '&nbsp;<span class="required">*</span>' : '' ) . '</label><select name="rating" id="sce-rating-' . esc_attr( $comment_id ) . '"' . $required . '>
+					<option value="" ' . selected( '', $rating, false ) . '>' . esc_html__( 'Rate&hellip;', 'simple-comment-editing' ) . '</option>
 					<option value="5" ' . selected( '5', $rating, false ) . '>>' . esc_html__( 'Perfect', 'simple-comment-editing' ) . '</option>
 					<option value="4" ' . selected( '4', $rating, false ) . '>' . esc_html__( 'Good', 'simple-comment-editing' ) . '</option>
 					<option value="3" ' . selected( '3', $rating, false ) . '>' . esc_html__( 'Average', 'simple-comment-editing' ) . '</option>

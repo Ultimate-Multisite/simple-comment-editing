@@ -321,10 +321,7 @@ Animation for showing container */
 }
 
 /* WooCommerce star ratings */
-.stars ~ .stars {
-	display: none;
-}
-.comment-form-rating {
+.sce-edit-comment .comment-form-rating {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
@@ -342,6 +339,6 @@ Animation for showing container */
 		align-items: center;
 	}
 }
-.woocommerce #reviews .comment-form-rating .stars a {
+.woocommerce #reviews .sce-edit-comment .comment-form-rating .stars a {
 	top: unset;
 }
