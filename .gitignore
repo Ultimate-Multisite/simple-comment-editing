@@ -1,5 +1,9 @@
 node_modules
 vendor
+.phpunit.result.cache
+phpunit-results.xml
+coverage.xml
+coverage-html/
 .DS_Store
 simple-comment-editing\.zip
 simple-comment-editing

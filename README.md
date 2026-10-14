@@ -36,6 +36,12 @@ The biggest differences:
 1. Just unzip and upload the "simple-comment-editor" folder to your '/wp-content/plugins/' directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
+## Development testing
+
+PHPUnit integration tests target PHP 7.4+ and run against real WordPress users,
+comments, AJAX handlers, and a disposable database. See [tests/README.md](tests/README.md)
+for setup, commands, the compatibility matrix, and coverage instructions.
+
 ## Frequently Asked Questions
 
 ### Why doesn't this plugin come with any styles?
