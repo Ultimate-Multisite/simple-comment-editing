@@ -60,7 +60,6 @@ jobs:
       WP_MULTISITE: ${{ matrix.multisite }}
       WP_TEST_DB_NAME: sce_test
       WP_TEST_DB_USER: root
-      WP_TEST_DB_HOST: 127.0.0.1:${{ job.services.database.ports[3306] }}
       XDEBUG_MODE: coverage
     steps:
       - name: Checkout
@@ -81,6 +80,8 @@ jobs:
       - name: Install matching WordPress core and test fixtures
         run: bash bin/install-wp-tests.sh
       - name: Run integration suite
+        env:
+          WP_TEST_DB_HOST: 127.0.0.1:${{ job.services.database.ports['3306'] }}
         run: composer test -- --log-junit phpunit-results.xml ${{ matrix.coverage && '--coverage-clover coverage.xml' || '--no-coverage' }}
       - name: Upload results
         if: always()
@@ -92,3 +93,19 @@ jobs:
             coverage.xml
           if-no-files-found: ignore
           retention-days: 14
+
+  phpunit-check:
+    name: PHPUnit checks
+    needs: integration
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every PHPUnit matrix job to pass
+        env:
+          MATRIX_RESULT: ${{ needs.integration.result }}
+        run: |
+          if [ "$MATRIX_RESULT" != success ]; then
+            printf 'PHPUnit matrix did not pass: %s\n' "$MATRIX_RESULT" >&2
+            exit 1
+          fi

@@ -59,6 +59,9 @@ composer lint                                   # PHPCS and PHPStan
 CI runs the minimum combination (PHP 7.4 / WordPress 6.5), current WordPress on
 PHP 8.2–8.5, and a multisite run. Coverage is generated on one job only; there is
 no arbitrary percentage gate. JUnit results are uploaded even on failure.
+The stable **PHPUnit checks** PR check succeeds only when every matrix job
+passes; failed, cancelled, or skipped matrix jobs cannot produce a green check.
+This is the check name to select if enabling required checks in branch protection.
 Use the minimum WordPress release with its matching older PHP runtime: running
 WordPress 6.5 on PHP 8.4+ produces upstream deprecations.
 
