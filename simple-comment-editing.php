@@ -113,6 +113,8 @@ class Simple_Comment_Editing {
 	 * @see init action.
 	 */
 	public function init() {
+		load_plugin_textdomain( 'simple-comment-editing', false, Functions::get_plugin_slug() . '/languages/' );
+
 		new Output();
 
 		/**
@@ -668,8 +670,8 @@ class Simple_Comment_Editing {
 		*/
 		do_action( 'sce_scripts_loaded' );
 
-		/* For translations in JS */
-		wp_set_script_translations( 'simple-comment-editing', 'simple-comment-editing' );
+		/* For translations in JS. */
+		wp_set_script_translations( 'simple-comment-editing', 'simple-comment-editing', Functions::get_plugin_dir( '/languages' ) );
 
 		/**
 		 * Filter: sce_allow_delete_confirmation
