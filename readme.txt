@@ -36,6 +36,9 @@ Allow your users to edit their comments and WooCommerce reviews for a period of 
 = Was this plugin called Comment Edit Core? =
 Yes. The plugin has been renamed back to Simple Comment Editing.
 
+= How do translations work? =
+Bundled translations provide the default frontend labels and countdown text when no WordPress.org language pack is installed, including German and German Formal. WordPress.org and Loco translations can still override the bundled defaults. Labels customized in Settings are saved site values, so update those values directly when changing site languages.
+
 = Why doesn't this plugin come with any styles? =
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
@@ -61,6 +64,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 = Unreleased =
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
+* Fix: Load bundled frontend translations and add German Formal countdown support.
 
 = 3.4.1 =
 * Released 2026-09-21

@@ -42,6 +42,14 @@ PHPUnit integration tests target PHP 7.4+ and run against real WordPress users,
 comments, AJAX handlers, and a disposable database. See [tests/README.md](tests/README.md)
 for setup, commands, the compatibility matrix, and coverage instructions.
 
+## Translations
+
+Bundled translations provide the default frontend labels and countdown text when
+no WordPress.org language pack is installed, including German and German Formal.
+WordPress.org and Loco translations can still override the bundled defaults.
+Labels customized in Settings are saved site values, so they are not translated
+automatically; update those saved values directly when changing site languages.
+
 ## Frequently Asked Questions
 
 ### Why doesn't this plugin come with any styles?
