@@ -291,6 +291,7 @@ Follow:
 - Render edit and delete triggers as native buttons, with their AJAX endpoint stored in `data-sce-ajax-url`.
 - Keep focus in the inline editor after a failed request and announce the returned message through its status region.
 - Disable every editor action while a save or deletion is in progress, then restore the relevant controls on a retryable failure.
+- Keep the optional Quicktags toolbar within the editor width and allow its native buttons to wrap on narrow screens.
 
 Avoid:
 
@@ -300,6 +301,7 @@ Avoid:
 Responsive/accessibility notes:
 
 - Keyboard users must be able to open, cancel, save, and delete through native button behavior.
+- When Quicktags is enabled, its native keyboard-accessible toolbar is an enhancement to the textarea, not a replacement for save, cancel, or error feedback.
 - The editor's error status is announced immediately; the action preserves its expanded state when a retry is possible.
 
 ## 8. Do's and Don'ts

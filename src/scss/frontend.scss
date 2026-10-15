@@ -48,6 +48,17 @@ Animation for showing container */
 	}
 }
 
+.sce-comment-textarea {
+	max-width: 100%;
+
+	.quicktags-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 2px;
+		max-width: 100%;
+	}
+}
+
 /* Regular Theme */
 .sce-edit-comment {
 	margin: 20px 0;

@@ -132,6 +132,23 @@ class Settings extends Tabs {
 								</tbody>
 							</table>
 
+							<h2><?php esc_html_e( 'Editor', 'simple-comment-editing' ); ?></h2>
+							<table class="form-table">
+								<tbody>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Quicktags Toolbar', 'simple-comment-editing' ); ?></th>
+										<td>
+											<input type="hidden" value="false" name="options[enable_quicktags]" />
+											<p>
+												<input id="sce-enable-quicktags" type="checkbox" value="true" name="options[enable_quicktags]" <?php checked( true, $options['enable_quicktags'] ); ?> />
+												<label for="sce-enable-quicktags"><?php esc_html_e( 'Enable the native WordPress Quicktags toolbar when editing comments', 'simple-comment-editing' ); ?></label>
+											</p>
+											<p class="description"><?php esc_html_e( 'Quicktags is optional. Leave it disabled when another plugin mounts a custom editor through the documented editor lifecycle hooks.', 'simple-comment-editing' ); ?></p>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+
 							<h2><?php esc_html_e( 'Who Can Edit', 'simple-comment-editing' ); ?></h2>
 							<table class="form-table">
 								<tbody>

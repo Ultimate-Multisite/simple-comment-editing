@@ -320,7 +320,7 @@ class Simple_Comment_Editing {
 		*/
 		$textarea_content .= apply_filters( 'sce_extra_fields_pre', '', $post_id, $comment_id, $comment );
 		$textarea_content .= '<div class="sce-comment-textarea">';
-		$textarea_content .= '<textarea class="sce-comment-text" %s>%s</textarea>';
+		$textarea_content .= '<textarea id="sce-comment-textarea-%d" class="sce-comment-text" %s>%s</textarea>';
 		$textarea_content .= '</div><!-- .sce-comment-textarea -->';
 
 		/**
@@ -426,6 +426,7 @@ class Simple_Comment_Editing {
 		$textarea_button_content .= $textarea_buttons . '</div><!-- .sce-comment-edit-buttons -->';
 		$textarea_content         = sprintf(
 			$textarea_content,
+			$comment_id,
 			'style="max-width: 100%; min-height: 150px;"',
 			esc_textarea( $raw_content ),
 			$textarea_button_content
@@ -645,11 +646,21 @@ class Simple_Comment_Editing {
 			return;
 		}
 
+		$enable_quicktags = (bool) Options::get_options( false, 'enable_quicktags' );
+		if ( $enable_quicktags ) {
+			wp_enqueue_editor();
+		}
+
+		$script_dependencies = array( 'wp-i18n', 'wp-hooks' );
+		if ( $enable_quicktags ) {
+			$script_dependencies[] = 'wp-editor';
+		}
+
 		$main_script_uri = Functions::get_plugin_url( '/dist/sce-editing.js' );
 		wp_enqueue_script(
 			'simple-comment-editing',
 			$main_script_uri,
-			array( 'wp-i18n', 'wp-hooks' ),
+			$script_dependencies,
 			SCE_VERSION,
 			true
 		);
@@ -695,6 +706,7 @@ class Simple_Comment_Editing {
 				'empty_comment'             => apply_filters( 'sce_empty_comment', self::$errors->get_error_message( 'comment_empty' ) ),
 				'allow_delete'              => self::$allow_delete,
 				'allow_delete_confirmation' => $allow_delete_confirmation,
+				'enable_quicktags'          => $enable_quicktags,
 				'ajax_url'                  => admin_url( 'admin-ajax.php', self::$scheme ),
 				'nonce'                     => wp_create_nonce( 'sce-general-ajax-nonce' ),
 				'timer_appearance'          => sanitize_text_field( Options::get_options( false, 'timer_appearance' ) ),
