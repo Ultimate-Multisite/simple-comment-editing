@@ -492,6 +492,8 @@ class Comment_Movement {
 			'created' => time(),
 			'status'  => 'prepared',
 		);
+		// An exception before reading the marker must never clear unknown recovery.
+		$pending = null;
 		try {
 			if ( ! $record ) {
 				return new \WP_Error( 'journal', __( 'The recovery record is unavailable. No comments were changed.', 'simple-comment-editing' ) );
@@ -587,7 +589,7 @@ class Comment_Movement {
 			$record['status'] = $known_rollback ? ( $restore ? 'restore_refused' : 'cancelled' ) : 'recovery_required';
 			update_option( '_sce_comment_move_' . $id, $record, false );
 			// A rejected stale preview must not leave a global recovery deadlock.
-			if ( $known_rollback && ( ! $restore || ! $pending ) ) {
+			if ( $known_rollback && null !== $pending && ( ! $restore || ! $pending ) ) {
 				delete_option( '_sce_comment_move_pending' );
 			}
 			clean_comment_cache( array_keys( $plan['thread_before'] ) );
