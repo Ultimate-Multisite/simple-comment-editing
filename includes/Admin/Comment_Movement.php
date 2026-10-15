@@ -123,7 +123,10 @@ class Comment_Movement {
 	 * @return array
 	 */
 	private function placement( $comment ) {
-		return array( 'post' => (int) $comment->comment_post_ID, 'parent' => (int) $comment->comment_parent );
+		return array(
+			'post'   => (int) $comment->comment_post_ID,
+			'parent' => (int) $comment->comment_parent,
+		);
 	}
 
 	/**
@@ -135,7 +138,10 @@ class Comment_Movement {
 	 * @return array|\WP_Error
 	 */
 	private function plan( $comment_id, $destination, $subtree ) {
-		$root   = $comment_id > 0 ? get_comment( $comment_id ) : null;
+		$root = $comment_id > 0 ? get_comment( $comment_id ) : null;
+		if ( ! $root ) {
+			return new \WP_Error( 'access', __( 'You cannot move this comment.', 'simple-comment-editing' ) );
+		}
 		$access = $this->authorize_comment( $root );
 		if ( is_wp_error( $access ) ) {
 			return $access;
@@ -161,14 +167,23 @@ class Comment_Movement {
 				return new \WP_Error( 'thread', __( 'The existing thread is invalid. Repair its parents before moving it.', 'simple-comment-editing' ) );
 			}
 			$seen[ $parent ] = true;
-			$parent         = (int) $ancestor->comment_parent;
+			$parent          = (int) $ancestor->comment_parent;
 		}
 
 		$thread   = array( $comment_id => $this->placement( $root ) );
 		$frontier = array( $comment_id );
 		while ( $frontier ) {
 			// Do not constrain the post: malformed cross-post descendants must fail.
-			$children = get_comments( array( 'parent__in' => $frontier, 'status' => 'all', 'number' => 501, 'orderby' => 'comment_ID', 'order' => 'ASC', 'hierarchical' => false ) );
+			$children = get_comments(
+				array(
+					'parent__in'   => $frontier,
+					'status'       => 'all',
+					'number'       => 501,
+					'orderby'      => 'comment_ID',
+					'order'        => 'ASC',
+					'hierarchical' => false,
+				)
+			);
 			$frontier = array();
 			foreach ( $children as $child ) {
 				$id     = (int) $child->comment_ID;
@@ -180,7 +195,7 @@ class Comment_Movement {
 					return new \WP_Error( 'thread', __( 'The thread is invalid or exceeds the 500-comment safety limit. No comments were moved.', 'simple-comment-editing' ) );
 				}
 				$thread[ $id ] = $this->placement( $child );
-				$frontier[]   = $id;
+				$frontier[]    = $id;
 			}
 		}
 		ksort( $thread, SORT_NUMERIC );
@@ -196,7 +211,10 @@ class Comment_Movement {
 				$after[ $id ]['parent'] = (int) $root->comment_parent;
 			}
 		}
-		$source_post = get_post( $source );
+		$source_post = $this->authorize_post( $source );
+		if ( is_wp_error( $source_post ) ) {
+			return $source_post;
+		}
 		return array(
 			'root'              => $comment_id,
 			'source'            => $source,
@@ -246,7 +264,10 @@ class Comment_Movement {
 			echo '</form></div>';
 			return;
 		}
-		$root   = get_comment( $id );
+		$root = get_comment( $id );
+		if ( ! $root ) {
+			wp_die( esc_html__( 'You cannot move this comment.', 'simple-comment-editing' ), '', array( 'response' => 403 ) );
+		}
 		$access = $this->authorize_comment( $root );
 		if ( is_wp_error( $access ) ) {
 			wp_die( esc_html( $access->get_error_message() ), '', array( 'response' => 403 ) );
@@ -285,7 +306,10 @@ class Comment_Movement {
 	private function render_preview( $plan ) {
 		echo '<h2>' . esc_html__( 'Preview — no comments have been moved', 'simple-comment-editing' ) . '</h2><ul>';
 		foreach ( array( $plan['source'], $plan['destination'] ) as $index => $post_id ) {
-			$post = get_post( $post_id );
+			$post = $this->authorize_post( $post_id );
+			if ( is_wp_error( $post ) ) {
+				wp_die( esc_html( $post->get_error_message() ), '', array( 'response' => 403 ) );
+			}
 			echo '<li><strong>' . esc_html( 0 === $index ? __( 'Source:', 'simple-comment-editing' ) : __( 'Destination:', 'simple-comment-editing' ) ) . '</strong> ' . esc_html( sprintf( /* translators: 1: post title, 2: post ID, 3: visibility/status. */ __( '%1$s (post #%2$d, status: %3$s)', 'simple-comment-editing' ), get_the_title( $post ), $post_id, $post->post_status ) ) . '</li>';
 		}
 		echo '</ul><p>' . esc_html( sprintf( /* translators: 1: moved comment count, 2: descendant count left behind. */ __( '%1$d comment(s) will move; %2$d descendant(s) will remain on the original post.', 'simple-comment-editing' ), $plan['subtree'] ? count( $plan['thread_before'] ) : 1, $plan['subtree'] ? 0 : count( $plan['thread_before'] ) - 1 ) ) . '</p>';
@@ -397,7 +421,7 @@ class Comment_Movement {
 		}
 		foreach ( $plan['thread_after'] as $id => $after ) {
 			$comment = get_comment( $id );
-			if ( is_wp_error( $this->authorize_comment( $comment ) ) ) {
+			if ( ! $comment || is_wp_error( $this->authorize_comment( $comment ) ) ) {
 				return false;
 			}
 			$current = $this->placement( $comment );
@@ -427,7 +451,14 @@ class Comment_Movement {
 				$parent = $placement['parent'];
 			}
 		}
-		$children = get_comments( array( 'parent__in' => array_keys( $plan['thread_after'] ), 'status' => 'all', 'number' => 501, 'fields' => 'ids' ) );
+		$children = get_comments(
+			array(
+				'parent__in' => array_keys( $plan['thread_after'] ),
+				'status'     => 'all',
+				'number'     => 501,
+				'fields'     => 'ids',
+			)
+		);
 		return ! array_diff( array_map( 'intval', $children ), array_keys( $plan['thread_after'] ) );
 	}
 
@@ -438,6 +469,7 @@ class Comment_Movement {
 	 * @param string $id Operation UUID.
 	 * @param bool   $restore Restore rather than move.
 	 * @return string|\WP_Error Operation UUID or an error before any mutation.
+	 * @throws \RuntimeException Internally caught to roll back a failed operation.
 	 */
 	private function execute( $plan, $id, $restore ) {
 		global $wpdb;
@@ -454,8 +486,16 @@ class Comment_Movement {
 		}
 		$transaction = false;
 		$committing  = false;
-		$record      = $restore ? $this->record( $id ) : array( 'plan' => $plan, 'actor' => get_current_user_id(), 'created' => time(), 'status' => 'prepared' );
+		$record      = $restore ? $this->record( $id ) : array(
+			'plan'    => $plan,
+			'actor'   => get_current_user_id(),
+			'created' => time(),
+			'status'  => 'prepared',
+		);
 		try {
+			if ( ! $record ) {
+				return new \WP_Error( 'journal', __( 'The recovery record is unavailable. No comments were changed.', 'simple-comment-editing' ) );
+			}
 			$pending = get_option( '_sce_comment_move_pending', '' );
 			if ( $pending && ( ! $restore || $pending !== $id ) ) {
 				return new \WP_Error( 'pending', __( 'An earlier move needs recovery. Open Comments → Move comment.', 'simple-comment-editing' ) );
@@ -492,12 +532,28 @@ class Comment_Movement {
 			}
 			foreach ( $plan['before'] as $comment_id => $before ) {
 				$comment = get_comment( $comment_id );
-				$target  = $restore ? $before : $plan['thread_after'][ $comment_id ];
+				if ( ! $comment ) {
+					throw new \RuntimeException( 'missing_comment' );
+				}
+				$target = $restore ? $before : $plan['thread_after'][ $comment_id ];
 				if ( $this->placement( $comment ) === $target ) {
 					continue;
 				}
 				// Deliberately avoid re-sanitizing content or triggering approval changes.
-				$result = $wpdb->update( $wpdb->comments, array( 'comment_post_ID' => $target['post'], 'comment_parent' => $target['parent'] ), array( 'comment_ID' => $comment_id, 'comment_post_ID' => $comment->comment_post_ID, 'comment_parent' => $comment->comment_parent ), array( '%d', '%d' ), array( '%d', '%d', '%d' ) );
+				$result = $wpdb->update(
+					$wpdb->comments,
+					array(
+						'comment_post_ID' => $target['post'],
+						'comment_parent'  => $target['parent'],
+					),
+					array(
+						'comment_ID'      => $comment_id,
+						'comment_post_ID' => $comment->comment_post_ID,
+						'comment_parent'  => $comment->comment_parent,
+					),
+					array( '%d', '%d' ),
+					array( '%d', '%d', '%d' )
+				);
 				if ( 1 !== $result ) {
 					throw new \RuntimeException( 'write' );
 				}
@@ -592,7 +648,14 @@ class Comment_Movement {
 	 */
 	private function finish( $result ) {
 		if ( is_wp_error( $result ) ) {
-			wp_die( esc_html( $result->get_error_message() ), '', array( 'response' => 409, 'back_link' => true ) );
+			wp_die(
+				esc_html( $result->get_error_message() ),
+				'',
+				array(
+					'response'  => 409,
+					'back_link' => true,
+				)
+			);
 		}
 		wp_safe_redirect( $this->page_url( array( 'operation' => $result ) ) );
 		exit;
