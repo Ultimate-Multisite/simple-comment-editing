@@ -30,6 +30,9 @@ class Admin_Settings {
 		new Tabs\Settings();
 		new Tabs\Integrations();
 		new Tabs\Support();
+
+		// Comment movement is deliberately confined to the native admin interface.
+		new Comment_Movement();
 	}
 
 	/**
