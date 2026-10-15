@@ -533,7 +533,6 @@ window.addEventListener( 'load', () => {
 		} ).catch( ( error ) => {
 			// A failed permission request must not expose cached author controls.
 			hideEditButton( button );
-			setEditorControlsDisabled( button.parentNode, true );
 			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		} );
 
