@@ -39,6 +39,9 @@ Yes. The plugin has been renamed back to Simple Comment Editing.
 = How do translations work? =
 Bundled translations provide the default frontend labels and countdown text when no WordPress.org language pack is installed, including German and German Formal. WordPress.org and Loco translations can still override the bundled defaults. Labels customized in Settings are saved site values, so update those values directly when changing site languages.
 
+= Can commenters use an HTML toolbar? =
+Yes. Enable Quicktags Toolbar in Settings -> Simple Comment Editing to add WordPress's native Quicktags toolbar to the comment editor. It is disabled by default, does not load TinyMCE or CKEditor, and can be left disabled when another plugin uses the documented JavaScript editor lifecycle.
+
 = Why doesn't this plugin come with any styles? =
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
@@ -63,6 +66,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = Unreleased =
+* New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
 * Fix: Load bundled frontend translations and add German Formal countdown support.
 

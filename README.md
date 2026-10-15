@@ -50,6 +50,48 @@ WordPress.org and Loco translations can still override the bundled defaults.
 Labels customized in Settings are saved site values, so they are not translated
 automatically; update those saved values directly when changing site languages.
 
+## Optional editor integrations
+
+Plain-text textarea editing remains the default. To add WordPress's native HTML
+toolbar, enable **Quicktags Toolbar** in **Settings → Simple Comment Editing**.
+The option loads WordPress's Quicktags assets only on pages where SCE loads and
+creates one editor per open comment. It does not add TinyMCE, CKEditor, or any
+third-party editor dependency.
+
+External editors can use the textarea lifecycle instead. Leave Quicktags
+disabled for that textarea, then register actions with an application-specific
+`wp.hooks` namespace. Each action receives one object with `textarea`,
+`commentId`, and `postId`; reset also receives the previously saved `content`.
+
+```js
+const namespace = 'my-plugin/comment-editor';
+const editors = new Map();
+
+wp.hooks.addAction( 'sce.comment.editor.show', namespace, ( { textarea, commentId } ) => {
+	editors.set( commentId, mountMyEditor( textarea, textarea.value ) );
+} );
+
+wp.hooks.addAction( 'sce.comment.editor.save.pre', namespace, ( { textarea, commentId } ) => {
+	textarea.value = editors.get( commentId ).getContent();
+} );
+
+wp.hooks.addAction( 'sce.comment.editor.reset', namespace, ( { content, commentId } ) => {
+	editors.get( commentId ).setContent( content );
+} );
+
+wp.hooks.addAction( 'sce.comment.editor.destroy', namespace, ( { commentId } ) => {
+	editors.get( commentId ).destroy();
+	editors.delete( commentId );
+} );
+```
+
+`sce.comment.editor.save.pre` runs before SCE reads the textarea, so an adapter
+must synchronously copy its editor value there. The same lifecycle is also
+emitted as document events: `sceEditTextareaShow`, `sceCommentSavePre`,
+`sceCommentEditorReset`, `sceCommentEditorDestroy`, and
+`sceCommentQuicktagsInit`. The existing `sceCommentSavePost` event remains
+available after a successful save.
+
 ## Frequently Asked Questions
 
 ### Why doesn't this plugin come with any styles?
