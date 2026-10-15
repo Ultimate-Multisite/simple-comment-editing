@@ -622,7 +622,6 @@ const setup = () => {
 			delete timers[ commentId ]; // Allow an explicit retry after a failed request.
 			// A failed permission request must not expose cached author controls.
 			hideEditButton( button );
-			setEditorControlsDisabled( button.parentNode, true );
 			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		} );
 
