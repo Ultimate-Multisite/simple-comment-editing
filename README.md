@@ -94,8 +94,8 @@ available after a successful save.
 
 ## Troubleshooting cache, proxy, migration, and inline controls
 
-SCE only loads its frontend assets on singular content where its server-side
-cookie and permission checks allow editing. It initializes the controls that
+SCE loads its frontend assets on singular content when the `sce_load_scripts`
+filter allows them. It initializes the controls that
 are present when the page `load` event fires. A cache, optimization plugin,
 proxy, migration, or dynamically replaced comment list can therefore make an
 otherwise valid installation appear broken. These checks isolate the observed
