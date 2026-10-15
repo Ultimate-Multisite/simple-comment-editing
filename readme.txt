@@ -59,6 +59,9 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
+= Unreleased =
+* Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
+
 = 3.4.1 =
 * Released 2026-09-21
 * Fix: Restore the comment editing interface for pending comments in block themes.
