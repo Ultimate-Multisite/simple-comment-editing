@@ -79,6 +79,8 @@ class Options {
 				case 'allow_unlimited_editing':
 				case 'require_login_for_editing':
 				case 'enable_quicktags':
+				case 'load_scripts_posts_only':
+				case 'load_scripts_with_comments':
 					$option = (bool) filter_var( $options[ $key ], FILTER_VALIDATE_BOOLEAN );
 					break;
 				case 'timer':
@@ -133,6 +135,8 @@ class Options {
 			'allow_unlimited_editing'         => false,
 			'require_login_for_editing'       => false,
 			'enable_quicktags'                => false,
+			'load_scripts_posts_only'         => false,
+			'load_scripts_with_comments'      => false,
 			'delete_behavior_users'           => 'trash',
 			'delete_behavior_moderators'      => 'trash',
 			'spam_behavior_moderators'        => 'spam',

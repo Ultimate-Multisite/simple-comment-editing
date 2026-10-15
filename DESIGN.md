@@ -304,6 +304,25 @@ Responsive/accessibility notes:
 - When Quicktags is enabled, its native keyboard-accessible toolbar is an enhancement to the textarea, not a replacement for save, cancel, or error feedback.
 - The editor's error status is announced immediately; the action preserves its expanded state when a retry is possible.
 
+#### Frontend asset loading controls
+
+Reference: `includes/Admin/Tabs/Settings.php` and `simple-comment-editing.php::add_scripts`
+
+Use when:
+
+- An administrator opts in to limit where SCE loads its frontend editor assets.
+
+Follow:
+
+- Keep each policy as a native checkbox with a visible, associated label and a short description of the post types or comment flows it excludes.
+- Explain that these controls affect asset selection only; they do not change comment ownership, nonce, or editing permissions.
+- Preserve keyboard operation and readable descriptions at mobile and desktop widths.
+
+Avoid:
+
+- Describing a policy as a security control or as a guaranteed performance measurement.
+- Hiding an existing editable comment merely because the post no longer accepts new comments.
+
 ## 8. Do's and Don'ts
 
 <!-- Practical guidelines and common pitfalls. These act as guardrails when creating designs. -->

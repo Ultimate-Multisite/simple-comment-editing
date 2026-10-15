@@ -145,7 +145,6 @@ class Simple_Comment_Editing {
 		add_action( 'comment_post', array( $this, 'comment_posted' ), 100, 1 );
 
 		// Loading scripts.
-		add_filter( 'sce_load_scripts', array( $this, 'maybe_load_scripts' ), 5, 1 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
 
 		// Init ajax.
@@ -619,7 +618,7 @@ class Simple_Comment_Editing {
 	}
 
 	/**
-	 * Adds the necessary JavaScript for the plugin (only loads on posts/pages)
+	 * Adds the necessary JavaScript for the plugin on singular content.
 	 *
 	 * Called via the wp_enqueue_scripts
 	 *
@@ -630,18 +629,26 @@ class Simple_Comment_Editing {
 			return;
 		}
 
-		// Check if there are any cookies present, otherwise don't load the scripts - WPAC_PLUGIN_NAME is for wp-ajaxify-comments (if the plugin is installed, load the JavaScript file).
+		$load_scripts = $this->maybe_load_scripts( false );
+		if ( (bool) Options::get_options( false, 'load_scripts_posts_only' ) && ! is_singular( 'post' ) ) {
+			$load_scripts = false;
+		}
+		if ( (bool) Options::get_options( false, 'load_scripts_with_comments' ) && ! $this->has_usable_comment_flow() ) {
+			$load_scripts = false;
+		}
 
 		/**
 		 * Filter: sce_load_scripts
 		 *
-		 * Boolean to decide whether to load SCE scripts or not
+		 * Boolean to decide whether to load SCE scripts or not. This filter runs
+		 * after the configured asset-loading policies, so an explicit developer
+		 * value takes precedence over those policies.
 		 *
 		 * @since 1.5.0
 		 *
 		 * @param bool $load_scripts Whether to load scripts.
 		 */
-		$load_scripts = apply_filters( 'sce_load_scripts', false );
+		$load_scripts = apply_filters( 'sce_load_scripts', $load_scripts );
 		if ( ! $load_scripts ) {
 			return;
 		}
@@ -907,9 +914,7 @@ class Simple_Comment_Editing {
 	}
 
 	/**
-	 * Whether to load scripts or not. Will load scripts if logged in, has Ajax comments, or has a cookie.
-	 *
-	 * Called via the sce_load_scripts filter
+	 * Whether SCE's existing edit signals request scripts.
 	 *
 	 * @since 1.5.0
 	 *
@@ -922,22 +927,55 @@ class Simple_Comment_Editing {
 			return true;
 		}
 
-		/* Return True if user is logged in */
-		if ( is_user_logged_in() ) {
-			return true;
-		}
+		return $yes || $this->has_editing_cookie();
+	}
 
+	/**
+	 * Determines whether the current visitor has an SCE editing cookie.
+	 *
+	 * @since 3.4.2
+	 *
+	 * @return bool True when an SCE editing cookie is present.
+	 */
+	private function has_editing_cookie() {
 		if ( empty( $_COOKIE ) ) {
 			return false;
 		}
-		$has_cookie = false;
 		foreach ( $_COOKIE as $cookie_name => $cookie_value ) {
 			if ( substr( $cookie_name, 0, 20 ) === 'SimpleCommentEditing' ) {
-				$has_cookie = true;
-				break;
+				return true;
 			}
 		}
-		return $has_cookie;
+		return false;
+	}
+
+	/**
+	 * Determines whether the current singular content has a usable comment flow.
+	 *
+	 * @since 3.4.2
+	 *
+	 * @return bool True when SCE may need frontend assets.
+	 */
+	private function has_usable_comment_flow() {
+		if ( defined( 'WPAC_PLUGIN_NAME' ) || comments_open() || get_comments_number() > 0 || $this->has_editing_cookie() ) {
+			return true;
+		}
+
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		$comments = get_comments(
+			array(
+				'post_id' => get_queried_object_id(),
+				'user_id' => get_current_user_id(),
+				'status'  => 'all',
+				'number'  => 1,
+				'fields'  => 'ids',
+			)
+		);
+
+		return ! empty( $comments );
 	}
 
 	/**
