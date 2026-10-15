@@ -19,18 +19,15 @@ const textareas = [];
 // Track active editors so repeated opens cannot create duplicate instances.
 const editorInstances = [];
 
-// Onload, get dom entries.
-window.addEventListener( 'load', () => {
-	const comment_edit_buttons = document.querySelectorAll( '.sce-edit-button' );
-	if ( ! comment_edit_buttons ) {
-		return;
-	}
+// Keep handler registration separate from replaceable countdown state.
+const initializedButtons = new WeakSet();
+
+// Set up integrations even when an optimizer executes this script after load.
+const setup = () => {
 
 	// For Ajaxify Comment integration.
 	document.addEventListener( 'wpacAfterUpdateComments', function( e ) {
-		const { detail } = e;
-		const { commentUrl } = detail;
-		window.SCE_comments_updated( commentUrl );
+		window.SCE_comments_updated( e.detail && e.detail.commentUrl );
 	} );
 
 	addFilter( 'sce.comment.save.data', 'comment-edit-lite', ( ajaxSaveParams ) => {
@@ -392,8 +389,27 @@ window.addEventListener( 'load', () => {
 		}
 	};
 
-	// Function to run to initialize the edit comment buttons.
+	/**
+	 * Release a replaced or detached comment's timer and editor.
+	 *
+	 * @param {string} commentId The comment ID.
+	 */
+	const releaseComment = ( commentId ) => {
+		const state = timers[ commentId ];
+		if ( ! state ) {
+			return;
+		}
+		window.clearTimeout( state.timeout );
+		destroyCommentEditor( state.button.parentNode.querySelector( '.sce-comment-text' ), commentId, state.postId );
+		delete timers[ commentId ];
+		delete textareas[ commentId ];
+	};
+
+	// Retain the existing single-button API for third-party integrations.
 	window.initEditCommentButton = ( button ) => {
+		if ( ! button || ! button.isConnected ) {
+			return;
+		}
 		// Get first link
 		const firstAction = button.querySelector( '.sce-edit-button-main, .sce-delete-button-main' );
 		if ( null === firstAction ) {
@@ -402,13 +418,29 @@ window.addEventListener( 'load', () => {
 		const ajaxUrl = getAjaxUrl( firstAction );
 
 		// Get comment ID from URL query param.
-		const urlParams = new URLSearchParams( ajaxUrl );
+		const urlParams = new URL( ajaxUrl, window.location.href ).searchParams;
 		const commentId = urlParams.get( 'cid' );
 		const postId = urlParams.get( 'pid' );
 		const nonce = urlParams.get( 'nonce' );
+		if ( ! /^\d+$/.test( commentId ) || ! /^\d+$/.test( postId ) ) {
+			return;
+		}
+		if ( timers[ commentId ] && timers[ commentId ].button === button ) {
+			return;
+		}
+		releaseComment( commentId );
+		const state = { button, postId, timeout: null };
+		timers[ commentId ] = state;
+		const currentTextarea = button.parentNode.querySelector( 'textarea' );
+		if ( currentTextarea ) {
+			textareas[ commentId ] = currentTextarea.value;
+		}
 
 		// Get the time left for the comment.
 		getTimeLeft( commentId, postId, simple_comment_editing.nonce, ajaxUrl ).then( ( response ) => {
+			if ( timers[ commentId ] !== state || ! button.isConnected ) {
+				return;
+			}
 			// Get the timer element.
 			if ( ! response.data || true !== response.data.success || ! response.data.data ) {
 				throw new Error( getErrorMessage( response, simple_comment_editing.comment_deleted_error ) );
@@ -416,6 +448,11 @@ window.addEventListener( 'load', () => {
 			const { data } = response.data;
 			let { minutes, seconds } = data;
 			const { can_edit } = data;
+			if ( ! can_edit ) {
+				releaseComment( commentId );
+				button.parentNode.remove();
+				return;
+			}
 
 			// Show button if time left.
 			if ( 'unlimited' === minutes && 'unlimited' === seconds ) {
@@ -435,13 +472,6 @@ window.addEventListener( 'load', () => {
 			// Convert to integers.
 			minutes = parseInt( minutes );
 			seconds = parseInt( seconds );
-
-			//Determine via JS if a user can edit a comment - Note that if someone were to finnagle with this, there is still a server side check when saving the comment
-			if ( ! can_edit ) {
-				//Remove elements
-				button.parentNode.remove();
-				return;
-			}
 
 			// Update the timer text placeholder.
 			const timerText = getTimerText( minutes, seconds );
@@ -471,24 +501,24 @@ window.addEventListener( 'load', () => {
 			} );
 			document.dispatchEvent( timerLoadedEvent );
 
-			// Save textarea.
-			const currentTextarea = document.querySelector( `#sce-edit-comment${ commentId } textarea` );
-			if ( null !== currentTextarea ) {
-				textareas[ commentId ] = currentTextarea.value;
-			}
-
 			// Save and set timer for one second.
-			timers[ commentId ] = {
+			Object.assign( state, {
 				minutes,
 				seconds,
 				start: new Date().getTime(),
 				time: 0,
 				timer: () => {
+					if ( timers[ commentId ] !== state || ! button.isConnected ) {
+						if ( timers[ commentId ] === state ) {
+							releaseComment( commentId );
+						}
+						return;
+					}
 					let timer_seconds = timers[ commentId ].seconds - 1;
 					let timer_minutes = timers[ commentId ].minutes;
 					if ( timer_minutes <= 0 && timer_seconds <= 0 ) {
 						// Remove any editor instance before its wrapper leaves the page.
-						destroyCommentEditor( button.parentNode.querySelector( '.sce-comment-text' ), commentId, postId );
+						releaseComment( commentId );
 						button.parentNode.remove();
 						return;
 					}
@@ -527,17 +557,26 @@ window.addEventListener( 'load', () => {
 					const timer_obj = timers[ commentId ];
 					timer_obj.time += 1000;
 					const diff = ( new Date().getTime() - timer_obj.start ) - timer_obj.time;
-					window.setTimeout( timer_obj.timer, ( 1000 - diff ) );
+					state.timeout = window.setTimeout( timer_obj.timer, Math.max( 0, 1000 - diff ) );
 				},
-			};
-			window.setTimeout( timers[ commentId ].timer, 1000 );
+			} );
+			state.timeout = window.setTimeout( state.timer, 1000 );
 		} ).catch( ( error ) => {
+			if ( timers[ commentId ] !== state || ! button.isConnected ) {
+				return;
+			}
+			delete timers[ commentId ]; // Allow an explicit retry after a failed request.
 			showEditButton( button );
 			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		} );
 
+		if ( initializedButtons.has( button ) ) {
+			return;
+		}
+		initializedButtons.add( button );
+
 		//Set up event for when the edit button is clicked
-		const editButton = document.querySelector( `#sce-edit-comment${ commentId } .sce-edit-button-main` );
+		const editButton = button.querySelector( '.sce-edit-button-main' );
 		if ( null !== editButton ) {
 			editButton.addEventListener( 'click', ( e ) => {
 				e.preventDefault();
@@ -735,10 +774,28 @@ window.addEventListener( 'load', () => {
 		}
 	};
 
-	// Loop through all edit buttons.
-	comment_edit_buttons.forEach( ( button ) => {
-		initEditCommentButton( button );
-	} );
+	/**
+	 * Initialize controls in a document, fragment, or newly inserted element.
+	 * Repeated calls reuse handlers and the current server-validated timer.
+	 *
+	 * @param {Document|DocumentFragment|Element} root The inserted comment root.
+	 */
+	window.SCE = window.SCE || {};
+	window.SCE.init = ( root = document ) => {
+		if ( ! root || 'function' !== typeof root.querySelectorAll ) {
+			return;
+		}
+		Object.keys( timers ).forEach( ( commentId ) => {
+			if ( ! timers[ commentId ].button.isConnected ) {
+				releaseComment( commentId );
+			}
+		} );
+		if ( root.matches && root.matches( '.sce-edit-button' ) ) {
+			window.initEditCommentButton( root );
+		}
+		root.querySelectorAll( '.sce-edit-button' ).forEach( window.initEditCommentButton );
+	};
+	const comment_edit_buttons = document.querySelectorAll( '.sce-edit-button' );
 
 	// WooCommerce: Get any star reviews and format.
 	const starReviewsContainers = document.querySelectorAll( '.comment-form-rating' );
@@ -877,11 +934,32 @@ window.addEventListener( 'load', () => {
 			return timer_text;
 		}, 10 );
 	}
-} );
+
+	window.SCE.init();
+	// Covers lazy loaders without relying on private plugin-specific events.
+	const observer = new MutationObserver( ( records ) => {
+		records.forEach( ( record ) => {
+			record.addedNodes.forEach( ( node ) => {
+				if ( 1 === node.nodeType ) {
+					window.SCE.init( node );
+				}
+			} );
+		} );
+	} );
+	observer.observe( document.body, { childList: true, subtree: true } );
+};
+if ( 'loading' === document.readyState ) {
+	document.addEventListener( 'DOMContentLoaded', setup, { once: true } );
+} else {
+	setup();
+}
 //Callback when comments have been updated (for wp-ajaxify-comments compatibility) - http://wordpress.org/plugins/wp-ajaxify-comments/faq/
 window.SCE_comments_updated = ( comment_url ) => {
-	const match = comment_url.match( /comment-(\d+)/ );
+	const match = 'string' === typeof comment_url && comment_url.match( /comment-(\d+)/ );
 	if ( ! match ) {
+		if ( window.SCE && window.SCE.init ) {
+			window.SCE.init();
+		}
 		return;
 	}
 	const comment_id = match[ 1 ];
@@ -892,10 +970,7 @@ window.SCE_comments_updated = ( comment_url ) => {
 		return;
 	}
 
-	// Get the edit button.
-	const editButton = comment.querySelector( '.sce-edit-button' );
-	if ( null !== editButton ) {
-		// Re-initialize the edit button.
-		window.initEditCommentButton( editButton );
+	if ( window.SCE && window.SCE.init ) {
+		window.SCE.init( comment );
 	}
 };
