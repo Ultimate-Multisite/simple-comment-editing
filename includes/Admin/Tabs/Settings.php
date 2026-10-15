@@ -293,6 +293,34 @@ class Settings extends Tabs {
 								</tbody>
 							</table>
 
+							<h2><?php esc_html_e( 'Comment Indicators', 'simple-comment-editing' ); ?></h2>
+							<table class="form-table">
+								<tbody>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Edited Timestamps', 'simple-comment-editing' ); ?></th>
+										<td>
+											<input type="hidden" value="false" name="options[show_edited_timestamp]" />
+											<p>
+												<input id="sce-show-edited-timestamp" type="checkbox" value="true" name="options[show_edited_timestamp]" <?php checked( true, $options['show_edited_timestamp'] ); ?> />
+												<label for="sce-show-edited-timestamp"><?php esc_html_e( 'Show the last successful content-edit time', 'simple-comment-editing' ); ?></label>
+											</p>
+											<p class="description"><?php esc_html_e( 'Records new SCE content edits only. Uses the site date, time, and timezone settings. No edit history is stored.', 'simple-comment-editing' ); ?></p>
+										</td>
+									</tr>
+									<tr>
+										<th scope="row"><?php esc_html_e( 'Deleted Placeholders', 'simple-comment-editing' ); ?></th>
+										<td>
+											<input type="hidden" value="false" name="options[show_deleted_placeholder]" />
+											<p>
+												<input id="sce-show-deleted-placeholder" type="checkbox" value="true" name="options[show_deleted_placeholder]" <?php checked( true, $options['show_deleted_placeholder'] ); ?> />
+												<label for="sce-show-deleted-placeholder"><?php esc_html_e( 'Show redacted placeholders in native classic comment lists', 'simple-comment-editing' ); ?></label>
+											</p>
+											<p class="description"><?php esc_html_e( 'Applies to approved native comments trashed through SCE. Hides their text and author while preserving approved replies. Originals remain private in WordPress Trash; restoration restores normal output. Permanent deletion leaves no placeholder. Block comment-query loops require a separate integration.', 'simple-comment-editing' ); ?></p>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+
 							<h2><?php esc_html_e( 'Appearance', 'simple-comment-editing' ); ?></h2>
 							<table class="form-table">
 								<tbody>

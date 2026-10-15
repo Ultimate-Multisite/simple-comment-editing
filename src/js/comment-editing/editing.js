@@ -360,7 +360,6 @@ window.addEventListener( 'load', () => {
 			return;
 		}
 
-		const editButton = wrapper.querySelector( '.sce-edit-button-main' );
 		const editor = wrapper.querySelector( '.sce-textarea' );
 		const wasEditing = null !== editor && 'none' !== editor.style.display;
 		const loading = wrapper.querySelector( '.sce-loading' );
@@ -377,8 +376,36 @@ window.addEventListener( 'load', () => {
 				throw new Error( getErrorMessage( response, simple_comment_editing.comment_deleted_error ) );
 			}
 
-			showStatus( commentId, simple_comment_editing.comment_deleted );
 			destroyCommentEditor( wrapper.querySelector( '.sce-comment-text' ), commentId, postId );
+			if ( response.data.data && response.data.data.placeholder ) {
+				delete textareas[ commentId ];
+				if ( timers[ commentId ] ) {
+					timers[ commentId ].minutes = 0;
+					timers[ commentId ].seconds = 0;
+				}
+				const comment = document.querySelector( '#comment-' + commentId );
+				if ( null === comment ) {
+					window.location.reload();
+					return;
+				}
+				// Remove author/avatar/content/editor data, keeping native threaded replies.
+				const replies = Array.from( comment.children ).filter( ( child ) => child.classList.contains( 'children' ) );
+				const placeholder = document.createElement( 'div' );
+				placeholder.className = 'sce-deleted-placeholder';
+				placeholder.setAttribute( 'role', 'status' );
+				placeholder.tabIndex = -1;
+				placeholder.textContent = simple_comment_editing.deleted_placeholder;
+				comment.replaceChildren( placeholder, ...replies );
+				Array.from( comment.attributes ).forEach( ( attribute ) => {
+					if ( 'id' !== attribute.name ) {
+						comment.removeAttribute( attribute.name );
+					}
+				} );
+				comment.className = 'comment sce-deleted-comment';
+				placeholder.focus();
+				return;
+			}
+			showStatus( commentId, simple_comment_editing.comment_deleted );
 			setTimeout( function() {
 				const comment = document.querySelector( '#comment-' + commentId );
 				if ( null !== comment ) {
@@ -387,6 +414,7 @@ window.addEventListener( 'load', () => {
 				wrapper.remove();
 			}, 3000 ); // Attempt to remove the comment from the theme interface.
 		} catch ( error ) {
+			const editButton = wrapper.querySelector( '.sce-edit-button-main' );
 			restoreEditor( wrapper, editButton, wasEditing );
 			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		}
