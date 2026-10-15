@@ -51,6 +51,27 @@ Animation for showing container */
 /* Regular Theme */
 .sce-edit-comment {
 	margin: 20px 0;
+	.sce-edit-button-main,
+	.sce-delete-button-main {
+		appearance: none;
+		background: none;
+		border: 0;
+		color: inherit;
+		cursor: pointer;
+		font: inherit;
+		padding: 0;
+		text-decoration: underline;
+
+		&:focus-visible {
+			outline: 2px solid $focus-color;
+			outline-offset: 2px;
+		}
+
+		&[aria-disabled="true"] {
+			cursor: wait;
+			opacity: 0.6;
+		}
+	}
 	.sce-comment-edit-buttons {
 		@media only screen and (max-width: 600px) {
 			.sce-comment-edit-buttons-group {

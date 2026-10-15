@@ -278,29 +278,29 @@ The shape language is defined by **{Architectural Sharpness | Soft Modernism | P
 
 <!-- Specific examples apply to a component type or use case. Reference approved implementations instead of pasting transcripts. -->
 
-#### {Element type}: {variant or use case}
+#### Inline comment editor actions
 
-Reference: `{path/to/refined/component-or-page}`
+Reference: `simple-comment-editing.php::add_edit_interface` and `src/js/comment-editing/editing.js`
 
 Use when:
 
-- {conditions}
+- A comment can be edited or deleted without leaving the current page.
 
 Follow:
 
-- {specific standards from the reference}
-
-Allowed variations:
-
-- {theme, brand, density, platform, or content variations}
+- Render edit and delete triggers as native buttons, with their AJAX endpoint stored in `data-sce-ajax-url`.
+- Keep focus in the inline editor after a failed request and announce the returned message through its status region.
+- Disable every editor action while a save or deletion is in progress, then restore the relevant controls on a retryable failure.
 
 Avoid:
 
-- {known anti-patterns}
+- Linking an inline action directly to `admin-ajax.php`; that URL is not a standalone editor.
+- Removing a comment or its editor until the deletion response succeeds.
 
 Responsive/accessibility notes:
 
-- {mobile, touch, keyboard, contrast, text scaling, reduced motion}
+- Keyboard users must be able to open, cancel, save, and delete through native button behavior.
+- The editor's error status is announced immediately; the action preserves its expanded state when a retry is possible.
 
 ## 8. Do's and Don'ts
 

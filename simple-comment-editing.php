@@ -268,15 +268,15 @@ class Simple_Comment_Editing {
 		$allow_edit        = apply_filters( 'sce_allow_edit_button', true );
 
 		if ( $allow_edit && ! $allow_edit_delete ) {
-			$sce_content .= sprintf( '<a class="sce-edit-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $click_to_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-edit-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d" aria-expanded="false">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $click_to_edit_text ) );
 		} elseif ( $allow_edit && $allow_edit_delete ) {
-			$sce_content .= sprintf( '<a class="sce-edit-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $click_to_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-edit-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d" aria-expanded="false">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $click_to_edit_text ) );
 			$sce_content .= '<span class="sce-seperator">&nbsp;&ndash;&nbsp;</span>';
-			$sce_content .= sprintf( '<a class="sce-delete-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $delete_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-delete-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $delete_edit_text ) );
 		} elseif ( ! $allow_edit && $allow_edit_delete ) {
-			$sce_content .= sprintf( '<a class="sce-delete-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $delete_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-delete-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $delete_edit_text ) );
 		} else {
-			$sce_content .= sprintf( '<a class="sce-edit-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $click_to_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-edit-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d" aria-expanded="false">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $click_to_edit_text ) );
 		}
 
 		/**
@@ -433,7 +433,7 @@ class Simple_Comment_Editing {
 		$sce_content .= $textarea_content . '</div><!-- .sce-edit-comment -->';
 
 		// Status Area.
-		$sce_content .= sprintf( '<div id="sce-edit-comment-status%d" class="sce-status" style="display: none;"></div><!-- .sce-status -->', $comment_id );
+		$sce_content .= sprintf( '<div id="sce-edit-comment-status%d" class="sce-status" role="status" aria-live="polite" style="display: none;"></div><!-- .sce-status -->', $comment_id );
 
 		/**
 		* Filter: sce_content
