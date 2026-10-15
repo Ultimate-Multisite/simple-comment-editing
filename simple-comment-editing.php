@@ -216,6 +216,9 @@ class Simple_Comment_Editing {
 		$comment_wrapper = sprintf( '<div id="sce-comment%d" class="sce-comment">%s</div>', $comment_id, $comment_content );
 
 		$classes = array( 'sce-edit-comment' );
+		if ( Options::get_options( false, 'reduce_motion' ) ) {
+			$classes[] = 'sce-reduced-motion';
+		}
 		/**
 		 * Filter: sce_wrapper_class
 		 *

@@ -417,6 +417,12 @@ window.addEventListener( 'load', () => {
 			let { minutes, seconds } = data;
 			const { can_edit } = data;
 
+			// Cached markup is not proof of ownership, including for unlimited editing.
+			if ( true !== can_edit ) {
+				button.parentNode.remove();
+				return;
+			}
+
 			// Show button if time left.
 			if ( 'unlimited' === minutes && 'unlimited' === seconds ) {
 				showEditButton( button );
@@ -435,13 +441,6 @@ window.addEventListener( 'load', () => {
 			// Convert to integers.
 			minutes = parseInt( minutes );
 			seconds = parseInt( seconds );
-
-			//Determine via JS if a user can edit a comment - Note that if someone were to finnagle with this, there is still a server side check when saving the comment
-			if ( ! can_edit ) {
-				//Remove elements
-				button.parentNode.remove();
-				return;
-			}
 
 			// Update the timer text placeholder.
 			const timerText = getTimerText( minutes, seconds );
@@ -532,7 +531,9 @@ window.addEventListener( 'load', () => {
 			};
 			window.setTimeout( timers[ commentId ].timer, 1000 );
 		} ).catch( ( error ) => {
-			showEditButton( button );
+			// A failed permission request must not expose cached author controls.
+			hideEditButton( button );
+			setEditorControlsDisabled( button.parentNode, true );
 			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		} );
 
