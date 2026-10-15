@@ -42,6 +42,9 @@ Bundled translations provide the default frontend labels and countdown text when
 = Can commenters use an HTML toolbar? =
 Yes. Enable Quicktags Toolbar in Settings -> Simple Comment Editing to add WordPress's native Quicktags toolbar to the comment editor. It is disabled by default, does not load TinyMCE or CKEditor, and can be left disabled when another plugin uses the documented JavaScript editor lifecycle.
 
+= Can I add custom fields or use a custom comment loop? =
+Yes. The integration guide in the GitHub README documents comment-scoped extra fields, safe metadata saving, custom loops that call WordPress's native `comment_text()` path, button HTML, and inline action-row styling. Keep SCE's editor wrappers and controls intact so its nonce, ownership checks, Save, Cancel, and Delete actions continue to work.
+
 = Why doesn't this plugin come with any styles? =
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
@@ -67,6 +70,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 = Unreleased =
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
+* Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
 * Fix: Load bundled frontend translations and add German Formal countdown support.
 

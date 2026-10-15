@@ -28,7 +28,7 @@ The biggest differences:
 <ol>
 <li>Only anonymous users (and logged in users who don't have permission to edit comments) can edit their comments for a period of time (the default is 5 minutes).</li>
 <li>There are no styles included with this plugin.  For most themes, the appearance is acceptable.  For advanced customization, see the "Styles" section.</li>
-<li>There are no options.  Some defaults can be overwritten using filters.</li>
+<li>Settings control the editing timer, labels, deletion behavior, and optional Quicktags toolbar. Some defaults can also be overwritten using filters.</li>
 </ol>
 
 ## Installation
@@ -98,7 +98,7 @@ available after a successful save.
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
 ### Where are the options?
-No options :) - Just simple comment editing.
+Log in to your Dashboard and open **Settings → Simple Comment Editing**.
 
 ### I want to style the editing interface.  Where do I start?
 See "Styles" section.
@@ -246,6 +246,98 @@ This is only used when retrieving a comment via Ajax and can be used by third-pa
 */
 ```
 
+### Custom fields that stay with the edited comment
+
+Use `sce_extra_fields_pre` when a field belongs before the comment textarea;
+use `sce_extra_fields` for fields after it. Both filters receive the post and
+comment IDs, and `sce_extra_fields_pre` also receives the current comment. Give
+each field an ID derived from `$comment_id`, then read it from that comment's
+editor in the JavaScript filter. This prevents two open editors from sharing a
+field value.
+
+The example below adds an optional title and a 1–5 rating. It uses the current
+WordPress hooks signature—`wp.hooks.addFilter( name, namespace, callback )`—and
+only adds values to the request when their fields exist and are non-empty.
+
+```php
+add_filter( 'sce_extra_fields_pre', function( $content, $post_id, $comment_id, $comment ) {
+	$title  = (string) get_comment_meta( $comment_id, '_my_sce_title', true );
+	$rating = absint( get_comment_meta( $comment_id, '_my_sce_rating', true ) );
+
+	return sprintf(
+		'<p><label for="my-sce-title-%1$d">Title</label> <input id="my-sce-title-%1$d" class="my-sce-title" type="text" value="%2$s" maxlength="120" /></p><p><label for="my-sce-rating-%1$d">Rating</label> <input id="my-sce-rating-%1$d" class="my-sce-rating" type="number" min="1" max="5" value="%3$d" /></p>',
+		absint( $comment_id ),
+		esc_attr( $title ),
+		$rating
+	);
+}, 10, 4 );
+
+add_action( 'sce_save_after', function( $comment_to_save, $post_id, $comment_id ) {
+	if ( isset( $_POST['my_sce_title'] ) ) {
+		$title = sanitize_text_field( wp_unslash( $_POST['my_sce_title'] ) );
+		if ( '' !== $title && strlen( $title ) <= 120 ) {
+			update_comment_meta( $comment_id, '_my_sce_title', $title );
+		}
+	}
+
+	if ( isset( $_POST['my_sce_rating'] ) ) {
+		$rating = absint( wp_unslash( $_POST['my_sce_rating'] ) );
+		if ( $rating >= 1 && $rating <= 5 ) {
+			update_comment_meta( $comment_id, '_my_sce_rating', $rating );
+		}
+	}
+}, 10, 3 );
+```
+
+```js
+wp.hooks.addFilter(
+	'sce.comment.save.data',
+	'my-plugin/comment-fields',
+	( ajaxSaveParams ) => {
+		const editor = document.querySelector( `#sce-edit-comment${ ajaxSaveParams.comment_id }` );
+		if ( ! editor ) {
+			return ajaxSaveParams;
+		}
+
+		const title = editor.querySelector( '.my-sce-title' );
+		const rating = editor.querySelector( '.my-sce-rating' );
+		if ( title && title.value.trim() ) {
+			ajaxSaveParams.my_sce_title = title.value.trim();
+		}
+		if ( rating && rating.value ) {
+			ajaxSaveParams.my_sce_rating = rating.value;
+		}
+
+		return ajaxSaveParams;
+	}
+);
+```
+
+SCE performs its normal nonce and comment-ownership checks before
+`sce_save_after` runs. The callback must still sanitize and validate every
+request value. Do not delete or overwrite existing metadata when an optional
+field is absent: that can happen when a theme does not render the extra field.
+
+### Custom comment loops
+
+SCE attaches its editor through WordPress's native `comment_text` filter. A
+custom loop should call `comment_text( $comment )` rather than echoing
+`$comment->comment_content`; the latter bypasses formatting and the editor.
+
+```php
+foreach ( get_comments( array( 'post_id' => get_the_ID() ) ) as $comment ) {
+	?>
+	<article id="comment-<?php echo esc_attr( $comment->comment_ID ); ?>" <?php comment_class( '', $comment ); ?>>
+		<?php comment_text( $comment ); ?>
+	</article>
+	<?php
+}
+```
+
+Keep the comment object available to `comment_text()` and do not manually copy
+SCE's nonce, AJAX URL, or controls. SCE supplies them only when the current
+visitor may edit that specific comment.
+
 ### sce_buttons - Add extra buttons to the editing interface (aside from Cancel and Save)
 ```php
 /**
@@ -258,6 +350,17 @@ This is only used when retrieving a comment via Ajax and can be used by third-pa
 * @param string  $textarea_buttons Button HTML
 * @param int       $comment_id        Comment ID
 */
+```
+
+`sce_buttons` receives the complete generated button markup, so use it for
+safe, intentional HTML additions such as an icon or a help link. The
+`sce_text_save`, `sce_text_cancel`, and `sce_text_delete` filters are for text
+labels; SCE escapes their values before rendering.
+
+```php
+add_filter( 'sce_buttons', function( $buttons, $comment_id ) {
+	return $buttons . '<span class="my-sce-help" data-comment-id="' . absint( $comment_id ) . '">Need help?</span>';
+}, 10, 2 );
 ```
 
 ### sce_content - Modify the edit output HTML
@@ -661,6 +764,28 @@ The save/cancel buttons have been wrapped in a `div` with class `sce-comment-edi
 .sce-comment-edit-buttons .sce-comment-save { /* styles here */ }
 .sce-comment-edit-buttons .sce-comment-cancel { /* styles here */ }
 ```
+
+For an inline WP ULike-style action row, style the existing wrapper instead of
+moving controls outside it. SCE's JavaScript expects `.sce-edit-comment` to
+contain `.sce-textarea`, `.sce-comment-text`, and
+`.sce-comment-edit-buttons`.
+
+```css
+.sce-edit-comment .sce-comment-edit-buttons {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.sce-edit-comment .sce-comment-edit-buttons-group {
+	display: inline-flex;
+	gap: 0.25rem;
+}
+```
+
+This keeps Save, Cancel, Delete, and the timer inside their required hierarchy
+and preserves their native button behavior. Do not replace the buttons with
+links to `admin-ajax.php` or move them into arbitrary theme markup.
 
 ### Styling the Status Message
 The status message has been wrapped in a `div` with class `sce-status`.
