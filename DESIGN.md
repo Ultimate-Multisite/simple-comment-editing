@@ -231,6 +231,26 @@ The shape language is defined by **{Architectural Sharpness | Soft Modernism | P
 - Navigation/orientation: {consistent placement, direction, breadcrumbs, tabs, or flow rules}
 - Interaction feedback: {hover, focus, active, loading, success, error, and disabled conventions}
 
+### Native comment indicators
+
+- Indicators are optional, not a brand redesign. `.sce-edited-at` and
+  `.sce-deleted-placeholder` inherit the active theme's text color and font size;
+  italic text distinguishes supplementary information without reducing contrast.
+- An edited label is a localized absolute date/time in a semantic `<time>` element.
+  The same server-rendered label appears after save and on reload. It is outside
+  the raw textarea value and must not be stored as comment content.
+- A deleted placeholder replaces the entire native comment's author, avatar,
+  content and editor surface, not just its text. Its native `.children` list stays
+  attached. The AJAX replacement is a status message and receives programmatic
+  focus after the activating control disappears; no new tab stop is introduced.
+- Responsive behavior: retain the theme's existing threaded layout at desktop and
+  mobile widths; allow long localized labels to wrap with `overflow-wrap: anywhere`.
+  No fixed widths, smaller mobile fonts, breakpoint-specific layout, or indicator
+  animation is added. Verify desktop/mobile overflow, 200% text scaling, keyboard
+  deletion/focus, and console/network errors through an existing WordPress site.
+- References: `simple-comment-editing.php`, `src/js/comment-editing/editing.js`,
+  `src/scss/frontend.scss`; the README defines Trash/restoration/privacy limits.
+
 ### Buttons
 
 **Primary** (`{components.button-primary}`)

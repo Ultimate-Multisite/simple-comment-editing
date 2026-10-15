@@ -204,6 +204,14 @@ class Ajax {
 			wp_send_json_error( $return );
 		}
 
+		$original_comment = get_comment( $comment_id );
+		// A duplicate request must never permanently delete an already trashed comment.
+		if ( 'trash' === $original_comment->comment_approved ) {
+			$return['placeholder'] = (bool) Options::get_options( false, 'show_deleted_placeholder' ) && (bool) get_comment_meta( $comment_id, '_sce_deleted_placeholder', true );
+			$return['error']       = '';
+			wp_send_json_success( $return );
+		}
+
 		/**
 		 * Action: sce_comment_is_deleted
 		 *
@@ -230,7 +238,18 @@ class Ajax {
 		 */
 		$force_delete = apply_filters( 'sce_force_delete', false, $comment_id, $post_id );
 
-		wp_delete_comment( $comment_id, $force_delete ); // Save to trash for admin retrieval.
+		$deleted = wp_delete_comment( $comment_id, $force_delete ); // Save to trash for admin retrieval.
+		if ( ! $deleted ) {
+			$return['errors'] = true;
+			$return['error']  = apply_filters( 'sce_comment_deleted_error', __( 'Your comment could not be deleted', 'simple-comment-editing' ) );
+			wp_send_json_error( $return );
+		}
+
+		$trashed_comment = get_comment( $comment_id );
+		if ( Options::get_options( false, 'show_deleted_placeholder' ) && '1' === $original_comment->comment_approved && in_array( $original_comment->comment_type, array( '', 'comment' ), true ) && $trashed_comment && 'trash' === $trashed_comment->comment_approved ) {
+			update_comment_meta( $comment_id, '_sce_deleted_placeholder', 1 );
+			$return['placeholder'] = (bool) get_comment_meta( $comment_id, '_sce_deleted_placeholder', true );
+		}
 		$return['error'] = '';
 		wp_send_json_success( $return );
 	} //end ajax_delete_comment
@@ -280,6 +299,12 @@ class Ajax {
 
 		// Get original comment.
 		$comment_to_save = $original_comment = get_comment( $comment_id, ARRAY_A ); // phpcs:ignore.
+		if ( ! in_array( $original_comment['comment_approved'], array( '0', '1' ), true ) ) {
+			$return['errors'] = true;
+			$return['remove'] = true;
+			$return['error']  = Simple_Comment_Editing::$errors->get_error_message( 'edit_fail' );
+			wp_send_json_error( $return );
+		}
 
 		// Check the comment.
 		if ( 1 === (int) $comment_to_save['comment_approved'] ) {
@@ -339,7 +364,12 @@ class Ajax {
 		$comment_to_save = apply_filters( 'sce_save_before', $comment_to_save, $post_id, $comment_id );
 
 		// Save the comment.
-		wp_update_comment( $comment_to_save );
+		$saved = wp_update_comment( $comment_to_save, true );
+		if ( false === $saved || is_wp_error( $saved ) ) {
+			$return['errors'] = true;
+			$return['error']  = __( 'Your comment could not be saved. Please try again.', 'simple-comment-editing' );
+			wp_send_json_error( $return );
+		}
 
 		/**
 		 * Action: sce_save_after
@@ -391,6 +421,9 @@ class Ajax {
 		}
 
 		$comment_to_return = Simple_Comment_Editing::get_comment( $comment_id );
+		if ( Options::get_options( false, 'show_edited_timestamp' ) && $comment_to_return && $original_comment['comment_content'] !== $comment_to_return->comment_content ) {
+			update_comment_meta( $comment_id, '_sce_edited_at', time() );
+		}
 
 		/**
 		 * Filter: sce_return_comment_text

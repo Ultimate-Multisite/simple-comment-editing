@@ -116,6 +116,8 @@ class Simple_Comment_Editing {
 		load_plugin_textdomain( 'simple-comment-editing', false, Functions::get_plugin_slug() . '/languages/' );
 
 		new Output();
+		// Restoration also happens in wp-admin, before frontend-only initialization.
+		add_action( 'untrashed_comment', array( $this, 'clear_deleted_placeholder' ) );
 
 		/**
 		 * Filter: sce_allow_delete
@@ -157,6 +159,9 @@ class Simple_Comment_Editing {
 		WooCommerce::run();
 
 		/* Begin Filters */
+		add_filter( 'comment_text', array( $this, 'add_edited_label' ), 999, 2 );
+		add_filter( 'comments_array', array( $this, 'add_deleted_placeholders' ), 20, 2 );
+		add_filter( 'wp_list_comments_args', array( $this, 'use_placeholder_walker' ) );
 		if ( ! is_feed() && ! defined( 'DOING_SCE' ) ) {
 			add_filter( 'comment_excerpt', array( $this, 'add_edit_interface' ), 1000, 2 );
 			add_filter( 'comment_text', array( $this, 'add_edit_interface' ), 1000, 2 );
@@ -171,6 +176,202 @@ class Simple_Comment_Editing {
 		add_filter( 'sce_button_extra_delete', array( $this, 'maybe_add_delete_icon' ) );
 		add_filter( 'sce_wrapper_class', array( $this, 'output_theme_class' ) );
 	} //end init
+
+	/**
+	 * Append the same localized edit label to native output and AJAX saves.
+	 *
+	 * @param string           $text    Rendered comment text.
+	 * @param \WP_Comment|null $comment Comment being rendered.
+	 * @return string Comment text with an optional label.
+	 */
+	public function add_edited_label( $text, $comment = null ) {
+		if ( ! Options::get_options( false, 'show_edited_timestamp' ) || ! $comment || ! in_array( $comment->comment_approved, array( '0', '1' ), true ) || false !== strpos( $text, 'class="sce-edited-at"' ) ) {
+			return $text;
+		}
+		$timestamp = absint( get_comment_meta( $comment->comment_ID, '_sce_edited_at', true ) );
+		if ( ! $timestamp ) {
+			return $text;
+		}
+		/* translators: %s: Localized date and time of the last successful comment edit. */
+		$label = sprintf( __( 'Edited on %s', 'simple-comment-editing' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $timestamp ) );
+		return $text . sprintf( '<p class="sce-edited-at"><time datetime="%1$s">%2$s</time></p>', esc_attr( gmdate( 'c', $timestamp ) ), esc_html( $label ) );
+	}
+
+	/**
+	 * Clear only the presentation marker when WordPress restores the original.
+	 *
+	 * @param int $comment_id Restored comment ID.
+	 */
+	public function clear_deleted_placeholder( $comment_id ) {
+		delete_comment_meta( $comment_id, '_sce_deleted_placeholder' );
+	}
+
+	/**
+	 * Project marked Trash entries into redacted native-list objects, never public queries.
+	 *
+	 * @param array $comments Visible native comments.
+	 * @param int   $post_id  Post being displayed.
+	 * @return array Visible comments and redacted placeholders.
+	 */
+	public function add_deleted_placeholders( $comments, $post_id ) {
+		if ( ! Options::get_options( false, 'show_deleted_placeholder' ) || is_admin() || is_feed() || post_password_required( $post_id ) ) {
+			return $comments;
+		}
+		$deleted = get_comments(
+			array(
+				'post_id'      => $post_id,
+				'status'       => 'trash',
+				'type'         => 'comment',
+				'hierarchical' => false,
+			)
+		);
+		// WordPress primes this post-scoped query's metadata cache; no meta-table join.
+		$deleted      = array_filter(
+			$deleted,
+			static function ( $trashed ) {
+				return (bool) get_comment_meta( $trashed->comment_ID, '_sce_deleted_placeholder', true );
+			}
+		);
+		$visible      = array_fill_keys( wp_list_pluck( $comments, 'comment_ID' ), true );
+		$remaining    = array_column( $deleted, null, 'comment_ID' );
+		$default_page = ! get_option( 'page_comments' ) || absint( get_query_var( 'cpage' ) ) <= 1;
+		// Each pass consumes marked ancestors, then includes their approved descendants.
+		// Repeating handles alternating live/deleted ancestors without orphaning replies.
+		while ( $remaining ) {
+			$placeholders = $this->get_visible_placeholders( $remaining, $visible, $default_page );
+			if ( ! $placeholders ) {
+				break;
+			}
+			$replies = get_comments(
+				array(
+					'post_id'      => $post_id,
+					'status'       => 'approve',
+					'type'         => 'comment',
+					'parent__in'   => array_keys( $placeholders ),
+					'hierarchical' => 'flat',
+				)
+			);
+			foreach ( array_merge( $placeholders, $replies ) as $item ) {
+				if ( ! isset( $visible[ $item->comment_ID ] ) ) {
+					$comments[]                   = $item;
+					$visible[ $item->comment_ID ] = true;
+				}
+				unset( $remaining[ $item->comment_ID ] );
+			}
+		}
+		usort(
+			$comments,
+			static function ( $first, $second ) {
+				$order = strcmp( $first->comment_date_gmt, $second->comment_date_gmt );
+				return $order ? $order : (int) $first->comment_ID <=> (int) $second->comment_ID;
+			}
+		);
+		return $comments;
+	}
+
+	/**
+	 * Build redacted objects only for branches attached to this native comment page.
+	 *
+	 * @param array $deleted      Remaining marked Trash entries, keyed by ID.
+	 * @param array $visible      Visible comment IDs.
+	 * @param bool  $default_page Whether standalone deleted branches belong here.
+	 * @return array Redacted comment objects, keyed by ID.
+	 */
+	private function get_visible_placeholders( $deleted, $visible, $default_page ) {
+		$placeholders = array();
+		foreach ( $deleted as $id => $trashed ) {
+			$parent  = (int) $trashed->comment_parent;
+			$visited = array( $id => true );
+			// Attach a deleted branch to its visible ancestor; do not reveal moderated trees.
+			while ( $parent && isset( $deleted[ $parent ] ) && ! isset( $visited[ $parent ] ) ) {
+				$visited[ $parent ] = true;
+				$parent             = (int) $deleted[ $parent ]->comment_parent;
+			}
+			if ( ( $parent && ! isset( $visible[ $parent ] ) ) || ( ! $parent && ! $default_page ) ) {
+				continue;
+			}
+			// Whitelist structural fields only. No author, content, user ID, IP, or agent.
+			$placeholders[ $id ] = new \WP_Comment(
+				(object) array(
+					'comment_ID'       => $id,
+					'comment_post_ID'  => (int) $trashed->comment_post_ID,
+					'comment_parent'   => (int) $trashed->comment_parent,
+					'comment_date'     => $trashed->comment_date,
+					'comment_date_gmt' => $trashed->comment_date_gmt,
+					'comment_approved' => 'trash',
+					'comment_type'     => 'comment',
+					'comment_content'  => __( 'This comment has been deleted.', 'simple-comment-editing' ),
+				)
+			);
+		}
+		return $placeholders;
+	}
+
+	/**
+	 * Bypass theme callbacks for placeholders so ID-based author lookups cannot leak.
+	 *
+	 * @param array $args Native comment-list arguments.
+	 * @return array Arguments with a privacy-preserving walker.
+	 */
+	public function use_placeholder_walker( $args ) {
+		if ( ! Options::get_options( false, 'show_deleted_placeholder' ) ) {
+			return $args;
+		}
+		$renderer       = empty( $args['walker'] ) ? new \Walker_Comment() : $args['walker'];
+		$args['walker'] = new class( $renderer ) extends \Walker_Comment {
+			/**
+			 * Original native/theme renderer for live comments.
+			 *
+			 * @var \Walker_Comment
+			 */
+			private $renderer;
+
+			/**
+			 * Preserve the live-comment renderer.
+			 *
+			 * @param \Walker_Comment $renderer Original renderer.
+			 */
+			public function __construct( $renderer ) {
+				$this->renderer = $renderer;
+			}
+
+			/**
+			 * Start a redacted element or delegate live output.
+			 *
+			 * @param string      $output            Output buffer.
+			 * @param \WP_Comment $data_object       Comment object.
+			 * @param int         $depth             Nesting depth.
+			 * @param array       $args              List arguments.
+			 * @param int         $current_object_id Comment ID.
+			 */
+			public function start_el( &$output, $data_object, $depth = 0, $args = array(), $current_object_id = 0 ) {
+				if ( 'trash' !== $data_object->comment_approved ) {
+					$this->renderer->has_children = $this->has_children;
+					$this->renderer->start_el( $output, $data_object, $depth, $args, $current_object_id );
+					return;
+				}
+				$tag     = 'div' === $args['style'] ? 'div' : 'li';
+				$output .= sprintf( '<%1$s id="comment-%2$d" class="comment sce-deleted-comment"><div class="sce-deleted-placeholder">%3$s</div>', $tag, (int) $data_object->comment_ID, esc_html__( 'This comment has been deleted.', 'simple-comment-editing' ) );
+			}
+
+			/**
+			 * Close the redacted element without invoking a theme callback.
+			 *
+			 * @param string      $output      Output buffer.
+			 * @param \WP_Comment $data_object Comment object.
+			 * @param int         $depth       Nesting depth.
+			 * @param array       $args        List arguments.
+			 */
+			public function end_el( &$output, $data_object, $depth = 0, $args = array() ) {
+				if ( 'trash' !== $data_object->comment_approved ) {
+					$this->renderer->end_el( $output, $data_object, $depth, $args );
+					return;
+				}
+				$output .= 'div' === $args['style'] ? '</div>' : '</li>';
+			}
+		};
+		return $args;
+	}
 
 	/**
 	 * Adds the SCE interface if a user can edit their comment
@@ -710,6 +911,7 @@ class Simple_Comment_Editing {
 				'confirm_delete'            => apply_filters( 'sce_confirm_delete', __( 'Do you want to delete this comment?', 'simple-comment-editing' ) ),
 				'comment_deleted'           => apply_filters( 'sce_comment_deleted', __( 'Your comment has been removed.', 'simple-comment-editing' ) ),
 				'comment_deleted_error'     => apply_filters( 'sce_comment_deleted_error', __( 'Your comment could not be deleted', 'simple-comment-editing' ) ),
+				'deleted_placeholder'       => __( 'This comment has been deleted.', 'simple-comment-editing' ),
 				'empty_comment'             => apply_filters( 'sce_empty_comment', self::$errors->get_error_message( 'comment_empty' ) ),
 				'allow_delete'              => self::$allow_delete,
 				'allow_delete_confirmation' => $allow_delete_confirmation,

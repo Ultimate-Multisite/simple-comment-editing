@@ -29,6 +29,20 @@ Animation for showing container */
 	opacity: 1;
 	height: auto;
 }
+
+// Indicators inherit theme contrast and wrap without introducing a new layout.
+.sce-edited-at,
+.sce-deleted-placeholder {
+	color: inherit;
+	font-size: inherit;
+	font-style: italic;
+	overflow-wrap: anywhere;
+}
+
+.sce-deleted-placeholder {
+	padding-block: 0.5em;
+}
+
 .sce-comment-edit-buttons {
 	.sce-comment-edit-buttons-group {
 		display: flex;
