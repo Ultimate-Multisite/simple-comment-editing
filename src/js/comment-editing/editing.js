@@ -8,13 +8,16 @@ import sendCommand from '../SendCommand';
 const { __, _n } = wp.i18n;
 
 // get hooks.
-const { addFilter, applyFilters } = wp.hooks;
+const { addFilter, applyFilters, doAction } = wp.hooks;
 
 // Get the timer placeholder.
 const timers = [];
 
 // Get the textareas placeholder.
 const textareas = [];
+
+// Track active editors so repeated opens cannot create duplicate instances.
+const editorInstances = [];
 
 // Onload, get dom entries.
 window.addEventListener( 'load', () => {
@@ -144,6 +147,77 @@ window.addEventListener( 'load', () => {
 		status.setAttribute( 'aria-live', isError ? 'assertive' : 'polite' );
 		status.textContent = message;
 		status.style.display = 'block';
+	};
+
+	/**
+	 * Dispatch a documented editor lifecycle event and WordPress hook.
+	 *
+	 * @param {string} eventName The document event name.
+	 * @param {string} hookName  The WordPress action name.
+	 * @param {Object} detail    The editor lifecycle data.
+	 */
+	const dispatchEditorLifecycle = ( eventName, hookName, detail ) => {
+		document.dispatchEvent( new CustomEvent( eventName, { detail } ) );
+		doAction( hookName, detail );
+	};
+
+	/**
+	 * Initialize an optional native Quicktags editor exactly once per comment.
+	 *
+	 * @param {Element} textarea  The comment textarea.
+	 * @param {number}  commentId The comment ID.
+	 * @param {number}  postId    The post ID.
+	 */
+	const initializeCommentEditor = ( textarea, commentId, postId ) => {
+		if ( editorInstances[ commentId ] ) {
+			return;
+		}
+
+		const editor = {
+			textareaId: textarea.id,
+			quicktags: false,
+		};
+		editorInstances[ commentId ] = editor;
+
+		if ( ! simple_comment_editing.enable_quicktags || ! wp.editor || 'function' !== typeof wp.editor.initialize ) {
+			return;
+		}
+
+		wp.editor.initialize( textarea.id, {
+			mediaButtons: false,
+			quicktags: true,
+			tinymce: false,
+		} );
+		editor.quicktags = true;
+		dispatchEditorLifecycle( 'sceCommentQuicktagsInit', 'sce.comment.editor.quicktags.init', {
+			textarea,
+			commentId,
+			postId,
+		} );
+	};
+
+	/**
+	 * Remove an editor after consumers have released their own editor instance.
+	 *
+	 * @param {Element} textarea  The comment textarea.
+	 * @param {number}  commentId The comment ID.
+	 * @param {number}  postId    The post ID.
+	 */
+	const destroyCommentEditor = ( textarea, commentId, postId ) => {
+		const editor = editorInstances[ commentId ];
+		if ( ! editor ) {
+			return;
+		}
+
+		dispatchEditorLifecycle( 'sceCommentEditorDestroy', 'sce.comment.editor.destroy', {
+			textarea,
+			commentId,
+			postId,
+		} );
+		if ( editor.quicktags && wp.editor && 'function' === typeof wp.editor.remove ) {
+			wp.editor.remove( editor.textareaId );
+		}
+		delete editorInstances[ commentId ];
 	};
 
 	/**
@@ -304,6 +378,7 @@ window.addEventListener( 'load', () => {
 			}
 
 			showStatus( commentId, simple_comment_editing.comment_deleted );
+			destroyCommentEditor( wrapper.querySelector( '.sce-comment-text' ), commentId, postId );
 			setTimeout( function() {
 				const comment = document.querySelector( '#comment-' + commentId );
 				if ( null !== comment ) {
@@ -412,7 +487,8 @@ window.addEventListener( 'load', () => {
 					let timer_seconds = timers[ commentId ].seconds - 1;
 					let timer_minutes = timers[ commentId ].minutes;
 					if ( timer_minutes <= 0 && timer_seconds <= 0 ) {
-						//Remove elements
+						// Remove any editor instance before its wrapper leaves the page.
+						destroyCommentEditor( button.parentNode.querySelector( '.sce-comment-text' ), commentId, postId );
 						button.parentNode.remove();
 						return;
 					}
@@ -483,6 +559,7 @@ window.addEventListener( 'load', () => {
 				editButton.setAttribute( 'aria-expanded', 'true' );
 
 				const textarea = editButtonWrapper.querySelector( '.sce-textarea textarea:first-of-type' );
+				initializeCommentEditor( textarea, commentId, postId );
 				const showEditTextAreaEvent = new CustomEvent( 'sceEditTextareaShow', {
 					detail: {
 						textarea,
@@ -491,6 +568,11 @@ window.addEventListener( 'load', () => {
 					},
 				} );
 				document.dispatchEvent( showEditTextAreaEvent );
+				doAction( 'sce.comment.editor.show', {
+					textarea,
+					commentId,
+					postId,
+				} );
 				textarea.focus();
 			} );
 
@@ -529,11 +611,19 @@ window.addEventListener( 'load', () => {
 			if ( null !== cancelButton ) {
 				cancelButton.addEventListener( 'click', ( e ) => {
 					e.preventDefault();
-					//Hide the textarea and show the edit button
+					// Hide the textarea and restore the last saved content.
 					const editButtonWrapper = cancelButton.closest( '.sce-edit-comment' );
+					const textarea = editButtonWrapper.querySelector( '.sce-textarea textarea:first-of-type' );
+					const savedContent = textareas[ commentId ];
+					textarea.value = savedContent;
+					dispatchEditorLifecycle( 'sceCommentEditorReset', 'sce.comment.editor.reset', {
+						textarea,
+						commentId,
+						postId,
+						content: savedContent,
+					} );
+					destroyCommentEditor( textarea, commentId, postId );
 					restoreEditor( editButtonWrapper, editButton, false );
-
-					document.querySelector( `#sce-edit-comment${ commentId } textarea` ).value = textareas[ commentId ];
 				} );
 			}
 
@@ -553,8 +643,14 @@ window.addEventListener( 'load', () => {
 					button.parentNode.querySelector( '.sce-textarea' ).style.display = 'none';
 					button.parentNode.querySelector( '.sce-loading' ).style.display = 'block';
 
-					//Save the comment
+					// Give native and external editors a synchronous chance to update the textarea.
 					const textarea = button.parentNode.querySelector( '.sce-textarea textarea:first-of-type' );
+					dispatchEditorLifecycle( 'sceCommentSavePre', 'sce.comment.editor.save.pre', {
+						button,
+						textarea,
+						commentId,
+						postId,
+					} );
 					const commentToSave = textarea.value.trim();
 
 					//If the comment is blank, see if the user wants to delete their comment
@@ -567,20 +663,15 @@ window.addEventListener( 'load', () => {
 
 						//Revert value.
 						textarea.value = textareas[ commentId ];
-						restoreEditor( editorWrapper, editButton, true );
-						return;
-					}
-
-					// Set up pre save event.
-					const savePreEvent = new CustomEvent( 'sceCommentSavePre', {
-						detail: {
-							button,
+						dispatchEditorLifecycle( 'sceCommentEditorReset', 'sce.comment.editor.reset', {
 							textarea,
 							commentId,
 							postId,
-						},
-					} );
-					document.dispatchEvent( savePreEvent );
+							content: textareas[ commentId ],
+						} );
+						restoreEditor( editorWrapper, editButton, true );
+						return;
+					}
 
 					// Save the comment.
 					let ajaxSaveParams = {
@@ -622,6 +713,14 @@ window.addEventListener( 'load', () => {
 								},
 							} );
 							document.dispatchEvent( savePostEvent );
+							doAction( 'sce.comment.editor.save.post', {
+								button,
+								textarea,
+								commentId,
+								postId,
+								ajaxData: data.data,
+							} );
+							destroyCommentEditor( textarea, commentId, postId );
 							restoreEditor( editorWrapper, editButton, false );
 						} else {
 							restoreEditor( editorWrapper, editButton, true );

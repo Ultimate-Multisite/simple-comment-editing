@@ -78,6 +78,7 @@ class Options {
 				case 'allow_delete_confirmation':
 				case 'allow_unlimited_editing':
 				case 'require_login_for_editing':
+				case 'enable_quicktags':
 					$option = (bool) filter_var( $options[ $key ], FILTER_VALIDATE_BOOLEAN );
 					break;
 				case 'timer':
@@ -131,6 +132,7 @@ class Options {
 			'allow_delete_confirmation'       => true,
 			'allow_unlimited_editing'         => false,
 			'require_login_for_editing'       => false,
+			'enable_quicktags'                => false,
 			'delete_behavior_users'           => 'trash',
 			'delete_behavior_moderators'      => 'trash',
 			'spam_behavior_moderators'        => 'spam',
