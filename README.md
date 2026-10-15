@@ -92,6 +92,96 @@ emitted as document events: `sceEditTextareaShow`, `sceCommentSavePre`,
 `sceCommentQuicktagsInit`. The existing `sceCommentSavePost` event remains
 available after a successful save.
 
+## Troubleshooting cache, proxy, migration, and inline controls
+
+SCE only loads its frontend assets on singular content where its server-side
+cookie and permission checks allow editing. It initializes the controls that
+are present when the page `load` event fires. A cache, optimization plugin,
+proxy, migration, or dynamically replaced comment list can therefore make an
+otherwise valid installation appear broken. These checks isolate the observed
+failure; they do not establish a historical support report's root cause.
+
+### Start with browser evidence
+
+Use a private/incognito window with the browser developer tools open, then
+leave a new test comment and reload the page. Test as the commenter, not as an
+administrator, and remove the test comment afterwards.
+
+1. **No edit markup:** inspect the rendered comment for `.sce-edit-comment`
+   and `.sce-edit-button`. If those elements are absent, capture the page URL,
+   the comment status, the visitor's login state, and the timer/settings in
+   effect. A custom comment loop must call WordPress's `comment_text()` path;
+   copying `comment_content` omits SCE's generated controls.
+2. **Markup is present but JavaScript is missing or errors:** in the Network
+   and Console panels, confirm that `dist/sce-editing.js` returns JavaScript
+   (not an HTML error page) and that `wp-i18n` and `wp-hooks` load before it.
+   When Quicktags Toolbar is enabled, `wp-editor` must also load first. Record
+   the first console error and the response/status for the failed asset.
+3. **Controls are hidden or disappear:** inspect the timer request and its
+   response before changing settings. SCE intentionally removes controls when
+   the server says the commenter cannot edit or the timer has expired. Do not
+   expose those controls with cached markup or client-side changes: the server
+   must continue to enforce nonce and comment-ownership checks.
+4. **Save or delete fails:** inspect the `admin-ajax.php` request, its status,
+   and its response while preserving the current comment text. Verify that the
+   request uses the current site's HTTP/HTTPS origin and carries the commenter's
+   cookies and nonce. A 403/nonce/auth response is not a reason to disable
+   anti-spam or other security protections.
+5. **A server error occurs:** obtain the complete exception and stack trace
+   from the server's WordPress/PHP error log, along with WordPress, PHP, theme,
+   SCE, and active cache/optimization-plugin versions. Do not post cookies,
+   nonces, full request bodies, credentials, or private comment content in a
+   public support thread.
+
+If another plugin replaces or lazy-loads comments after the original page load,
+use its documented integration point to call the existing
+`window.initEditCommentButton( button )` for each new `.sce-edit-button`. The
+built-in Ajaxify Comments callback already performs that reinitialization.
+
+### Cache and optimization isolation
+
+Purge every relevant layer before each retest: the WordPress/cache-plugin cache,
+the reverse-proxy or CDN cache, and the browser cache. Then test one change at
+a time and re-enable it after recording the result. Do not serve a shared cache
+entry that contains an authenticated or edit-author response to other visitors.
+
+For W3 Total Cache and similar tools, exclude these already-built files from
+JavaScript minification, combination, defer/delay rewriting, and re-minification
+while testing:
+
+```
+dist/sce-editing.js
+dist/integrations-admin.js
+```
+
+Purge the cache, load a newly created comment as its author, and confirm the
+asset responses and timer request again. If that restores the controls, add
+optimizations back one at a time to identify the conflicting transform instead
+of leaving all optimizations disabled.
+
+For Cloudflare or another proxy, separately test script optimization (including
+defer/delay or similar script rewriting), cached HTML, the origin's HTTP/HTTPS
+scheme, and client-IP forwarding. These are plausible integration points, not a
+known single root cause. Keep the proxy's security and anti-spam controls in
+place; make the narrowest documented exclusion needed for the affected asset or
+path, then purge and retest.
+
+### After a migration or domain change
+
+Confirm WordPress Address and Site Address use the expected canonical scheme
+and host. Compare the page URL and `admin-ajax.php` request origin, then check
+the commenter's cookies for the expected domain, path, and secure flag. Clear
+old browser cookies and every cache layer before creating a fresh test comment.
+If the controls work intermittently, collect a HAR or the failing request's URL,
+status, response headers, and first console error with cookies and request
+payloads removed.
+
+For a reproducible report, include the smallest standard-theme reproduction,
+the exact sequence, the active optimization/proxy settings, versions, and the
+privacy-safe browser evidence above. Cross-check dynamic comment replacement
+against the initialization guidance above and AJAX failures against the
+request/response checks before concluding that SCE itself is at fault.
+
 ## Frequently Asked Questions
 
 ### Why doesn't this plugin come with any styles?

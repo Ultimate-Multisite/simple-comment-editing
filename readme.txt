@@ -33,6 +33,35 @@ Allow your users to edit their comments and WooCommerce reviews for a period of 
 
 == Frequently Asked Questions ==
 
+= Why are the edit controls missing, hidden, or unable to save? =
+First identify what the browser received. Inspect the comment for SCE markup,
+then use the browser Network and Console panels to check that
+`dist/sce-editing.js` loads as JavaScript after `wp-i18n` and `wp-hooks` (and
+`wp-editor` when Quicktags is enabled). Inspect the timer or `admin-ajax.php`
+request before changing settings: an expired timer, a nonce/permission failure, or a
+server error needs a different fix. Preserve the comment text and do not expose
+controls by bypassing SCE's server-side ownership or nonce checks.
+
+= How should I test a cache, CDN, proxy, or migration problem? =
+Use a new test comment in a private browser window, then purge the WordPress,
+proxy/CDN, and browser caches before every retest. For W3 Total Cache and
+similar tools, temporarily exclude `dist/sce-editing.js` and
+`dist/integrations-admin.js` from minification, combination, defer/delay, and
+re-minification; purge and retest before adding optimizations back one at a
+time. Do not share cached authenticated or edit-author pages with other
+visitors. For Cloudflare, separately test script optimization, cached HTML,
+origin HTTP/HTTPS scheme, and client-IP forwarding; none is a known universal
+root cause. Keep security and anti-spam protections enabled and use the
+narrowest documented exclusion needed.
+
+After a migration, verify WordPress Address and Site Address, the page and
+`admin-ajax.php` origins, and the commenter's cookie domain/path/secure flag.
+For an unresolved failure, collect the first console error, asset/AJAX status
+and response headers, full server exception/stack trace, versions, and a
+standard-theme reproduction. Remove cookies, nonces, secret values, private
+comment content, and request bodies from any public report. The GitHub README
+has the full cache/proxy/migration diagnostic guide.
+
 = Was this plugin called Comment Edit Core? =
 Yes. The plugin has been renamed back to Simple Comment Editing.
 
