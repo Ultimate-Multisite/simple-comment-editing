@@ -81,6 +81,8 @@ class Options {
 				case 'enable_quicktags':
 				case 'load_scripts_posts_only':
 				case 'load_scripts_with_comments':
+				case 'show_edited_timestamp':
+				case 'show_deleted_placeholder':
 					$option = (bool) filter_var( $options[ $key ], FILTER_VALIDATE_BOOLEAN );
 					break;
 				case 'timer':
@@ -137,6 +139,8 @@ class Options {
 			'enable_quicktags'                => false,
 			'load_scripts_posts_only'         => false,
 			'load_scripts_with_comments'      => false,
+			'show_edited_timestamp'           => false,
+			'show_deleted_placeholder'        => false,
 			'delete_behavior_users'           => 'trash',
 			'delete_behavior_moderators'      => 'trash',
 			'spam_behavior_moderators'        => 'spam',

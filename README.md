@@ -112,6 +112,36 @@ can therefore return `true` to load SCE on an otherwise excluded singular view,
 or return `false` to suppress both `dist/sce-editing.js` and
 `dist/sce-frontend.css`.
 
+## Optional edited and deleted indicators
+
+Both indicators are disabled by default in **Settings → Simple Comment Editing**.
+
+- **Edited timestamps** records `_sce_edited_at` (a UTC Unix timestamp) after a
+  successful SCE content change. The localized last-edit label uses the site's
+  date format, time format, and timezone, both after AJAX save and after reload.
+  Failed saves, unchanged/sanitized-to-unchanged content, and rating-only changes
+  do not advance it. There is no edit history or backfill. Disabling the option
+  hides labels and stops recording new timestamps without deleting existing ones.
+- **Deleted placeholders** marks an approved native comment only after SCE
+  successfully moves it to WordPress Trash. Public output contains a localized
+  deletion message, never its text, author, email, URL, avatar, or editing fields.
+  The original remains private in Trash under WordPress's normal retention policy;
+  SCE does not copy its content or author data. Restoring it restores normal output
+  and clears the marker. Permanent deletion (including automatic trash expiry and
+  `sce_force_delete`) removes the placeholder. Pending comments, spam, moderator
+  actions outside SCE, and WooCommerce reviews do not create placeholders.
+
+Placeholders integrate with classic `comments_template()` / `wp_list_comments()`
+lists. Replies keep their original parents: approved replies under a deleted
+comment are included with its redacted ancestor, not deleted or reparented.
+With comment pagination, a deleted branch stays with its visible live ancestor;
+branches without a live ancestor appear on the default view / first comment page.
+Placeholders do not increase WordPress's public comment count or create pages.
+Block comment-query loops and renderers that bypass these native functions need
+their own integration; this is not a promise of support for every custom theme.
+Disabling placeholders removes this presentation, not the normal Trash lifecycle.
+Reverting the feature leaves only additive metadata; no migration is required.
+
 ## Troubleshooting cache, proxy, migration, and inline controls
 
 SCE loads its frontend assets on singular content when the `sce_load_scripts`
