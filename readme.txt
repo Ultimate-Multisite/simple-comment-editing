@@ -94,6 +94,10 @@ not block comment-query loops or arbitrary custom renderers. With pagination,
 deleted branches stay with a visible live ancestor; otherwise they appear on the
 default view / first comment page. Placeholders do not change the public comment
 count or add pages. The GitHub README documents the metadata and recovery policy.
+= Can edit controls appear without the fade-in delay? =
+Yes. Enable Reduced Motion under Editor in Settings -> Simple Comment Editing to skip the decorative 0.6-second reveal animation for all button themes. It is disabled by default. A browser's reduced-motion preference also skips this animation, regardless of the setting. Keyboard behavior and the edit timer are unchanged.
+
+This is a presentation option, not immediate authorization or a measured network speedup. Controls remain hidden until the server confirms ownership and the remaining edit time, including for logged-in authors with unlimited editing. Failed permission requests keep controls hidden. Save and Delete still validate permissions and nonces on the server. Personalized pages for logged-in users or guest authors with editing cookies must bypass shared page/CDN caches; hiding controls cannot protect private textarea content already included in incorrectly shared HTML. Purge cached pages after changing this setting.
 
 = Can I add custom fields or use a custom comment loop? =
 Yes. The integration guide in the GitHub README documents comment-scoped extra fields, safe metadata saving, custom loops that call WordPress's native `comment_text()` path, button HTML, and inline action-row styling. Keep SCE's editor wrappers and controls intact so its nonce, ownership checks, Save, Cancel, and Delete actions continue to work.
@@ -180,6 +184,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * New: Add a repeat-safe, root-scoped initializer for AJAX/lazy-loaded comment controls and an opt-in guest ownership hook for validated AJAX submissions.
 * New: Add moderator-only comment/subtree movement with a native admin preview, explicit confirmation, thread/count preservation, and recovery records.
 * New: Add opt-in localized edited timestamps and privacy-preserving deleted placeholders for native classic comment lists, with threaded replies and WordPress Trash restoration.
+* New: Add opt-in reduced-motion edit controls and respect the browser reduced-motion preference without skipping server permission checks.
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
 * Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.

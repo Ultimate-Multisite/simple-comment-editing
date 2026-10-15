@@ -321,6 +321,9 @@ Follow:
 - Disable every editor action while a save or deletion is in progress, then restore the relevant controls on a retryable failure.
 - Keep the optional Quicktags toolbar within the editor width and allow its native buttons to wrap on narrow screens.
 - Preserve WP ULike's existing automatic comment-control nodes when replacing saved text, including top/bottom placement, live vote state, and handlers. Do not duplicate controls if the response also includes their markup; do not change the post's like button or other comments.
+- Keep controls hidden and outside keyboard navigation until the uncached `sce_get_time_left` AJAX response confirms permission. A failed check must not reveal the editor.
+- Retain the default 0.6-second reveal, but skip it when the administrator enables Reduced Motion or the browser requests `prefers-reduced-motion: reduce`. This changes presentation only, not ownership, nonces, or edit windows.
+- Do not infer immediate permission from HTML, login state, or unlimited-editing settings: personalized comment pages must bypass shared caches, and an authoritative AJAX round trip is still required.
 
 Avoid:
 
@@ -332,6 +335,7 @@ Responsive/accessibility notes:
 - Keyboard users must be able to open, cancel, save, and delete through native button behavior.
 - When Quicktags is enabled, its native keyboard-accessible toolbar is an enhancement to the textarea, not a replacement for save, cancel, or error feedback.
 - The editor's error status is announced immediately; the action preserves its expanded state when a retry is possible.
+- Motion preferences must not move focus or change button themes. Preserve the existing stacked save/cancel/delete layout at widths up to 600px; verify the same controls at desktop and mobile widths.
 
 #### Frontend asset loading controls
 

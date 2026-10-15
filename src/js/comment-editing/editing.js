@@ -496,6 +496,12 @@ const setup = () => {
 				return;
 			}
 
+			// Cached markup is not proof of ownership, including for unlimited editing.
+			if ( true !== can_edit ) {
+				button.parentNode.remove();
+				return;
+			}
+
 			// Show button if time left.
 			if ( 'unlimited' === minutes && 'unlimited' === seconds ) {
 				showEditButton( button );
@@ -614,7 +620,9 @@ const setup = () => {
 				return;
 			}
 			delete timers[ commentId ]; // Allow an explicit retry after a failed request.
-			showEditButton( button );
+			// A failed permission request must not expose cached author controls.
+			hideEditButton( button );
+			setEditorControlsDisabled( button.parentNode, true );
 			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		} );
 

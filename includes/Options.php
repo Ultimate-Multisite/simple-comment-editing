@@ -98,6 +98,7 @@ class Options {
 				case 'allow_unlimited_editing':
 				case 'require_login_for_editing':
 				case 'enable_quicktags':
+				case 'reduce_motion':
 				case 'load_scripts_posts_only':
 				case 'load_scripts_with_comments':
 				case 'show_edited_timestamp':
@@ -156,6 +157,7 @@ class Options {
 			'allow_unlimited_editing'         => false,
 			'require_login_for_editing'       => false,
 			'enable_quicktags'                => false,
+			'reduce_motion'                   => false,
 			'load_scripts_posts_only'         => false,
 			'load_scripts_with_comments'      => false,
 			'show_edited_timestamp'           => false,
