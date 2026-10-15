@@ -196,7 +196,18 @@ class Comment_Movement {
 				$after[ $id ]['parent'] = (int) $root->comment_parent;
 			}
 		}
-		return array( 'root' => $comment_id, 'source' => $source, 'destination' => $destination, 'subtree' => $subtree, 'before' => $before, 'thread_before' => $thread, 'thread_after' => $after );
+		$source_post = get_post( $source );
+		return array(
+			'root'              => $comment_id,
+			'source'            => $source,
+			'destination'       => $destination,
+			'subtree'           => $subtree,
+			'source_state'      => array( $source_post->post_status, (bool) $source_post->post_password ),
+			'destination_state' => array( $post->post_status, (bool) $post->post_password ),
+			'before'            => $before,
+			'thread_before'     => $thread,
+			'thread_after'      => $after,
+		);
 	}
 
 	/**
@@ -273,9 +284,9 @@ class Comment_Movement {
 	 */
 	private function render_preview( $plan ) {
 		echo '<h2>' . esc_html__( 'Preview — no comments have been moved', 'simple-comment-editing' ) . '</h2><ul>';
-		foreach ( array( $plan['source'], $plan['destination'] ) as $post_id ) {
+		foreach ( array( $plan['source'], $plan['destination'] ) as $index => $post_id ) {
 			$post = get_post( $post_id );
-			echo '<li>' . esc_html( sprintf( /* translators: 1: post title, 2: post ID, 3: visibility/status. */ __( '%1$s (post #%2$d, status: %3$s)', 'simple-comment-editing' ), get_the_title( $post ), $post_id, $post->post_status ) ) . '</li>';
+			echo '<li><strong>' . esc_html( 0 === $index ? __( 'Source:', 'simple-comment-editing' ) : __( 'Destination:', 'simple-comment-editing' ) ) . '</strong> ' . esc_html( sprintf( /* translators: 1: post title, 2: post ID, 3: visibility/status. */ __( '%1$s (post #%2$d, status: %3$s)', 'simple-comment-editing' ), get_the_title( $post ), $post_id, $post->post_status ) ) . '</li>';
 		}
 		echo '</ul><p>' . esc_html( sprintf( /* translators: 1: moved comment count, 2: descendant count left behind. */ __( '%1$d comment(s) will move; %2$d descendant(s) will remain on the original post.', 'simple-comment-editing' ), $plan['subtree'] ? count( $plan['thread_before'] ) : 1, $plan['subtree'] ? 0 : count( $plan['thread_before'] ) - 1 ) ) . '</p>';
 		echo '<p>' . esc_html__( 'The moved comment becomes a top-level comment. When replies stay behind, direct children are reparented to its original parent (or become top-level); deeper replies keep their parents. When replies move, their internal relationships are preserved.', 'simple-comment-editing' ) . '</p>';
@@ -358,10 +369,12 @@ class Comment_Movement {
 			'prepared'          => __( 'The move was interrupted. Restore the original placement before trying another move.', 'simple-comment-editing' ),
 			'moved'             => __( 'The comments were moved and both posts’ counts were refreshed.', 'simple-comment-editing' ),
 			'restored'          => __( 'The original placement was restored and both posts’ counts were refreshed.', 'simple-comment-editing' ),
+			'cancelled'         => __( 'The move could not proceed or the thread changed. No placement changes were committed. Preview the move again.', 'simple-comment-editing' ),
+			'restore_refused'   => __( 'Recovery could not proceed. No recovery changes were committed. Check for new replies, changed parents or lost permissions before retrying; the journal is retained.', 'simple-comment-editing' ),
 			'recovery_required' => __( 'The move or count refresh could not finish. The recovery record is retained. Restore the original placement before trying another move.', 'simple-comment-editing' ),
 		);
 		echo '<div class="notice notice-info"><p>' . esc_html( $messages[ $record['status'] ] ) . '</p></div><p>' . esc_html( sprintf( /* translators: %s: recovery record ID. */ __( 'Recovery record: %s. It stores original post and parent IDs, not comment content.', 'simple-comment-editing' ), $id ) ) . '</p>';
-		if ( 'restored' !== $record['status'] ) {
+		if ( ! in_array( $record['status'], array( 'restored', 'cancelled' ), true ) ) {
 			echo '<p>' . esc_html__( 'Recovery refuses to overwrite changed placements or new replies. Content, approval and metadata are never restored or overwritten.', 'simple-comment-editing' ) . '</p><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 			$this->hidden( 'action', 'sce_restore_comment' );
 			$this->hidden( 'operation', $id );
@@ -440,6 +453,7 @@ class Comment_Movement {
 			return new \WP_Error( 'busy', __( 'Another move is in progress, or database locks are unavailable. No comments were moved.', 'simple-comment-editing' ) );
 		}
 		$transaction = false;
+		$committing  = false;
 		$record      = $restore ? $this->record( $id ) : array( 'plan' => $plan, 'actor' => get_current_user_id(), 'created' => time(), 'status' => 'prepared' );
 		try {
 			$pending = get_option( '_sce_comment_move_pending', '' );
@@ -491,6 +505,11 @@ class Comment_Movement {
 			if ( ! $this->refresh( $plan ) ) {
 				throw new \RuntimeException( 'counts' );
 			}
+			// wpdb may reconnect after a lost connection, discarding its transaction.
+			if ( ! $this->owns_lock( $lock ) ) {
+				throw new \RuntimeException( 'connection' );
+			}
+			$committing = true;
 			if ( false === $wpdb->query( 'COMMIT' ) ) {
 				throw new \RuntimeException( 'commit' );
 			}
@@ -505,16 +524,34 @@ class Comment_Movement {
 			}
 			delete_option( '_sce_comment_move_pending' );
 		} catch ( \Throwable $error ) {
+			$known_rollback = ! $committing && $this->owns_lock( $lock );
 			if ( $transaction ) {
-				$wpdb->query( 'ROLLBACK' );
+				$known_rollback = false !== $wpdb->query( 'ROLLBACK' ) && $known_rollback;
 			}
-			$this->refresh( $plan );
-			$record['status'] = 'recovery_required';
+			$record['status'] = $known_rollback ? ( $restore ? 'restore_refused' : 'cancelled' ) : 'recovery_required';
 			update_option( '_sce_comment_move_' . $id, $record, false );
+			// A rejected stale preview must not leave a global recovery deadlock.
+			if ( $known_rollback && ( ! $restore || ! $pending ) ) {
+				delete_option( '_sce_comment_move_pending' );
+			}
+			clean_comment_cache( array_keys( $plan['thread_before'] ) );
+			clean_post_cache( $plan['source'] );
+			clean_post_cache( $plan['destination'] );
 		} finally {
 			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
 		}
 		return $id;
+	}
+
+	/**
+	 * Detect a reconnect before claiming a transaction or rollback succeeded.
+	 *
+	 * @param string $lock Advisory lock name.
+	 * @return bool
+	 */
+	private function owns_lock( $lock ) {
+		global $wpdb;
+		return '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT IS_USED_LOCK(%s) = CONNECTION_ID()', $lock ) );
 	}
 
 	/**

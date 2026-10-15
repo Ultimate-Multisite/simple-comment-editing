@@ -86,6 +86,47 @@ Lazy Load for Comments uses the DOM-insertion contract rather than a private plu
 
 The GitHub README records browser verification with Ajaxify Comments 3.2.2 and Lazy Load for Comments 2.1.0 on Twenty Twenty-Five, including the Ajaxify comments-container selector required by that theme.
 
+= Can moderators move a comment to another post? =
+Yes. In Dashboard -> Comments, use a comment's Move action (or Comments -> Move
+comment). Enter the destination post ID, choose only that comment or its entire
+reply subtree, then preview and explicitly confirm. This is an admin-only tool:
+it requires comment moderation, edit access to every affected comment, and read
+and edit access to both posts. It does not add public commenter controls.
+
+The moved root becomes top-level on the destination. If replies stay behind,
+direct children inherit the root's former parent on the original post (or become
+top-level); deeper replies keep their parents. If replies move, their internal
+parents are preserved. The preview shows both posts, their statuses, and the
+number of comments moving or staying. Moving approved comments can expose them
+on the destination; content, approval and metadata are not changed.
+
+The destination must accept comments. Trashed posts, attachments, WooCommerce
+products/reviews, pingbacks, trackbacks, spam/trashed comments, invalid threads,
+and threads over 500 comments are rejected. Closed source posts are allowed.
+InnoDB comment, post and option tables plus database advisory locks and
+serializable transactions are required; unsupported storage fails without moving
+comments. Placement and both approved-comment counts are updated in one
+transaction. A changed preview or a known rolled-back failure can be retried
+after previewing again; it does not block later moves.
+
+= How can I recover an interrupted or mistaken move? =
+Before any placement changes, SCE saves a non-autoloaded private option named
+`_sce_comment_move_<operation UUID>` containing before/after comment post and
+parent IDs, the initiating moderator ID, time and outcome. It contains no comment
+content or author details. `_sce_comment_move_pending` is an additive, normally
+absent pointer to an unresolved operation; no existing option defaults change and
+no backfill runs. Records are retained, not automatically expired or removed by
+this feature, so an interrupted operation does not lose its recovery data.
+
+The outcome screen provides Restore original placement. An interrupted operation
+is also linked from Comments -> Move comment and blocks new moves until recovery.
+Recovery has its own nonce and checks current permissions on both posts and all
+affected comments. It restores placements and counts only, not content or
+metadata. It refuses new replies, unrelated placement changes, missing parents,
+or cycles instead of overwriting another moderator's work. Retain the journal
+when investigating a refused recovery or database failure; do not delete the
+pending marker to bypass it. Normal deactivation does not undo a completed move.
+
 = Why doesn't this plugin come with any styles? =
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
@@ -115,6 +156,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 = Unreleased =
 * Fix: Preserve WP ULike comment buttons, their vote state, and their top/bottom placement after inline comment saves.
 * New: Add a repeat-safe, root-scoped initializer for AJAX/lazy-loaded comment controls and an opt-in guest ownership hook for validated AJAX submissions.
+* New: Add moderator-only comment/subtree movement with a native admin preview, explicit confirmation, thread/count preservation, and recovery records.
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
 * Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
