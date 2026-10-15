@@ -400,7 +400,7 @@ const setup = () => {
 			return;
 		}
 		window.clearTimeout( state.timeout );
-		destroyCommentEditor( state.button.parentNode.querySelector( '.sce-comment-text' ), commentId, state.postId );
+		destroyCommentEditor( state.wrapper.querySelector( '.sce-comment-text' ), commentId, state.postId );
 		delete timers[ commentId ];
 		delete textareas[ commentId ];
 	};
@@ -421,7 +421,6 @@ const setup = () => {
 		const urlParams = new URL( ajaxUrl, window.location.href ).searchParams;
 		const commentId = urlParams.get( 'cid' );
 		const postId = urlParams.get( 'pid' );
-		const nonce = urlParams.get( 'nonce' );
 		if ( ! /^\d+$/.test( commentId ) || ! /^\d+$/.test( postId ) ) {
 			return;
 		}
@@ -429,10 +428,10 @@ const setup = () => {
 			return;
 		}
 		releaseComment( commentId );
-		const state = { button, postId, timeout: null };
+		const state = { button, postId, wrapper: button.parentNode, timeout: null };
 		timers[ commentId ] = state;
 		const currentTextarea = button.parentNode.querySelector( 'textarea' );
-		if ( currentTextarea ) {
+		if ( currentTextarea && ( ! initializedButtons.has( button ) || undefined === textareas[ commentId ] ) ) {
 			textareas[ commentId ] = currentTextarea.value;
 		}
 
@@ -500,6 +499,9 @@ const setup = () => {
 				},
 			} );
 			document.dispatchEvent( timerLoadedEvent );
+			if ( timers[ commentId ] !== state || ! button.isConnected ) {
+				return;
+			}
 
 			// Save and set timer for one second.
 			Object.assign( state, {
@@ -549,6 +551,9 @@ const setup = () => {
 						},
 					} );
 					document.dispatchEvent( timerCountdownEvent );
+					if ( timers[ commentId ] !== state || ! button.isConnected ) {
+						return;
+					}
 
 					// Update timer with new values.
 					timers[ commentId ].seconds = timer_seconds;
@@ -574,6 +579,7 @@ const setup = () => {
 			return;
 		}
 		initializedButtons.add( button );
+		const nonce = urlParams.get( 'nonce' );
 
 		//Set up event for when the edit button is clicked
 		const editButton = button.querySelector( '.sce-edit-button-main' );
@@ -938,6 +944,12 @@ const setup = () => {
 	window.SCE.init();
 	// Covers lazy loaders without relying on private plugin-specific events.
 	const observer = new MutationObserver( ( records ) => {
+		// Unlimited timers also need cleanup when a loader removes their markup.
+		Object.keys( timers ).forEach( ( commentId ) => {
+			if ( ! timers[ commentId ].button.isConnected ) {
+				releaseComment( commentId );
+			}
+		} );
 		records.forEach( ( record ) => {
 			record.addedNodes.forEach( ( node ) => {
 				if ( 1 === node.nodeType ) {

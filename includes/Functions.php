@@ -97,6 +97,11 @@ class Functions {
 	 */
 	public static function can_edit( $comment_id, $post_id ) {
 		global $comment, $post;
+		// Dynamic lists can leave a different comment in the WordPress global.
+		$comment = get_comment( $comment_id, OBJECT ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Keep the existing filter contract bound to the requested comment.
+		if ( ! $comment || (int) $comment->comment_post_ID !== (int) $post_id || ! in_array( (string) $comment->comment_approved, array( '0', '1' ), true ) ) {
+			return false;
+		}
 
 		/**
 		 * Filter: sce_can_edit_pre
@@ -119,12 +124,6 @@ class Functions {
 			return apply_filters( 'sce_can_edit', true, $comment, $comment_id, $post_id );
 		}
 
-		if ( ! is_object( $comment ) ) {
-			$comment = get_comment( $comment_id, OBJECT ); // phpcs:ignore.
-		}
-		if ( (int) $comment->comment_post_ID !== $post_id ) {
-			return false;
-		}
 		$user_id = absint( self::get_user_id() );
 
 		// if we are logged in and are the comment author, bypass cookie check.
@@ -163,7 +162,7 @@ class Functions {
 
 			$cookie_value      = self::get_cookie_value( 'SimpleCommentEditing' . $comment_id . $cookie_hash );
 			$comment_meta_hash = get_comment_meta( $comment_id, '_sce', true );
-			if ( $cookie_value !== $comment_meta_hash ) {
+			if ( ! is_string( $cookie_value ) || '' === $cookie_value || ! is_string( $comment_meta_hash ) || '' === $comment_meta_hash || ! hash_equals( $comment_meta_hash, $cookie_value ) ) {
 				return false;
 			}
 		}

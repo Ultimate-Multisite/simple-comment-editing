@@ -74,6 +74,13 @@ Yes. Enable Quicktags Toolbar in Settings -> Simple Comment Editing to add WordP
 = Can I add custom fields or use a custom comment loop? =
 Yes. The integration guide in the GitHub README documents comment-scoped extra fields, safe metadata saving, custom loops that call WordPress's native `comment_text()` path, button HTML, and inline action-row styling. Keep SCE's editor wrappers and controls intact so its nonce, ownership checks, Save, Cancel, and Delete actions continue to work.
 
+= Can SCE initialize AJAX-submitted or lazy-loaded comments? =
+Yes. SCE observes newly inserted controls, and integrations can call `window.SCE.init( insertedComment )` after attaching their markup. Repeated calls reuse handlers and the countdown. The existing WP Ajaxify event and `SCE_comments_updated` callback remain supported. Assets preload on singular content with open or existing comments, including for first-time guests; the asset-loading policies and `sce_load_scripts` override still apply.
+
+Custom AJAX submitters must render through WordPress's native `comment_text()` path and opt into `sce_ajax_comment_submission` only around their existing validated comment-creation call, before sending output. The README has the adapter fragment. This establishes the guest cookie in the original submission response, not through a public comment-ID claim endpoint. Initialization never bypasses nonce, ownership, or expiry checks.
+
+Lazy Load for Comments uses the DOM-insertion contract rather than a private plugin event; this is not a claim that every plugin-version combination has been verified. The BuddyBoss adapter is explicitly unverified and requires both native comment rendering and the validated server submission route. Test actual integrations with separate owner/non-owner browsers before release.
+
 = Why doesn't this plugin come with any styles? =
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
@@ -101,6 +108,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = Unreleased =
+* New: Add a repeat-safe, root-scoped initializer for AJAX/lazy-loaded comment controls and an opt-in guest ownership hook for validated AJAX submissions.
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
 * Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
