@@ -141,6 +141,8 @@ Block comment-query loops and renderers that bypass these native functions need
 their own integration; this is not a promise of support for every custom theme.
 Disabling placeholders removes this presentation, not the normal Trash lifecycle.
 Reverting the feature leaves only additive metadata; no migration is required.
+The existing webpack build regenerates `dist/sce-editing.js`,
+`dist/sce-frontend.css`, and its tracked `dist/sce-frontend.css.map` together.
 
 ## Troubleshooting cache, proxy, migration, and inline controls
 

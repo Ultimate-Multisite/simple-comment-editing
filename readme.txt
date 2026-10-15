@@ -71,6 +71,27 @@ Bundled translations provide the default frontend labels and countdown text when
 = Can commenters use an HTML toolbar? =
 Yes. Enable Quicktags Toolbar in Settings -> Simple Comment Editing to add WordPress's native Quicktags toolbar to the comment editor. It is disabled by default, does not load TinyMCE or CKEditor, and can be left disabled when another plugin uses the documented JavaScript editor lifecycle.
 
+= Can I show edited timestamps or deleted-comment placeholders? =
+Yes. Both are opt-in under Comment Indicators in Settings -> Simple Comment Editing.
+Edited timestamps record only successful SCE content changes, not failed saves,
+no-op changes, or rating-only edits. Labels use the site's date, time and timezone.
+There is no edit history or backfill; disabling the setting hides existing labels.
+
+Deleted placeholders apply only to previously approved native comments moved to
+Trash through SCE. They display a localized message without deleted text, author,
+email, URL, avatar or editor fields, while keeping approved threaded replies.
+WordPress retains the private original in Trash under its normal retention policy;
+SCE copies no author or content data. Restoration restores normal output. Permanent
+deletion, including automatic Trash expiry, removes the placeholder. Pending/spam
+comments, WooCommerce reviews and moderator actions outside SCE are excluded.
+Disabling the option hides placeholders without changing WordPress Trash behavior.
+
+This presentation supports classic comments_template() / wp_list_comments() lists,
+not block comment-query loops or arbitrary custom renderers. With pagination,
+deleted branches stay with a visible live ancestor; otherwise they appear on the
+default view / first comment page. Placeholders do not change the public comment
+count or add pages. The GitHub README documents the metadata and recovery policy.
+
 = Can I add custom fields or use a custom comment loop? =
 Yes. The integration guide in the GitHub README documents comment-scoped extra fields, safe metadata saving, custom loops that call WordPress's native `comment_text()` path, button HTML, and inline action-row styling. Keep SCE's editor wrappers and controls intact so its nonce, ownership checks, Save, Cancel, and Delete actions continue to work.
 
@@ -101,6 +122,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = Unreleased =
+* New: Add opt-in localized edited timestamps and privacy-preserving deleted placeholders for native classic comment lists, with threaded replies and WordPress Trash restoration.
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
 * Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
