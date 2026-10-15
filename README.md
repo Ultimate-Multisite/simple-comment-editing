@@ -385,14 +385,23 @@ add_filter( 'sce_extra_fields_pre', function( $content, $post_id, $comment_id, $
 add_action( 'sce_save_after', function( $comment_to_save, $post_id, $comment_id ) {
 	if ( isset( $_POST['my_sce_title'] ) ) {
 		$title = sanitize_text_field( wp_unslash( $_POST['my_sce_title'] ) );
-		if ( '' !== $title && strlen( $title ) <= 120 ) {
+		// HTML maxlength counts UTF-16 code units, including two for astral characters.
+		$title_length                  = preg_match_all( '/[\s\S]/u', $title );
+		$supplementary_character_count = preg_match_all( '/[\x{10000}-\x{10FFFF}]/u', $title );
+		if (
+			'' !== $title
+			&& false !== $title_length
+			&& false !== $supplementary_character_count
+			&& ( $title_length + $supplementary_character_count ) <= 120
+		) {
 			update_comment_meta( $comment_id, '_my_sce_title', $title );
 		}
 	}
 
 	if ( isset( $_POST['my_sce_rating'] ) ) {
-		$rating = absint( wp_unslash( $_POST['my_sce_rating'] ) );
-		if ( $rating >= 1 && $rating <= 5 ) {
+		$raw_rating = wp_unslash( $_POST['my_sce_rating'] );
+		if ( is_string( $raw_rating ) && preg_match( '/^[1-5]$/D', $raw_rating ) ) {
+			$rating = absint( $raw_rating );
 			update_comment_meta( $comment_id, '_my_sce_rating', $rating );
 		}
 	}
@@ -425,8 +434,10 @@ wp.hooks.addFilter(
 
 SCE performs its normal nonce and comment-ownership checks before
 `sce_save_after` runs. The callback must still sanitize and validate every
-request value. Do not delete or overwrite existing metadata when an optional
-field is absent: that can happen when a theme does not render the extra field.
+request value. Its title check uses the same UTF-16 code units as the input's
+`maxlength`, and its rating check rejects values outside 1–5 before conversion.
+Do not delete or overwrite existing metadata when an optional field is absent:
+that can happen when a theme does not render the extra field.
 
 ### Custom comment loops
 
