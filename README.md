@@ -92,6 +92,26 @@ emitted as document events: `sceEditTextareaShow`, `sceCommentSavePre`,
 `sceCommentQuicktagsInit`. The existing `sceCommentSavePost` event remains
 available after a successful save.
 
+## Optional frontend asset loading
+
+By default, SCE keeps its existing asset-loading behavior on singular content.
+In **Settings → Simple Comment Editing**, two opt-in policies can reduce that
+surface without changing the default:
+
+- **Load frontend assets on WordPress posts only** loads SCE on the built-in
+  `post` type only. It excludes ordinary pages, WooCommerce products, and all
+  custom post types.
+- **Load frontend assets only when comments are available** omits SCE when the
+  current singular content has no open comment form, existing comments, or
+  known editable-comment session. It keeps assets for closed content with an
+  existing editable comment, logged-in commenters with a pending comment, and
+  supported Ajaxify Comments lazy-loading flows.
+
+Both policies apply before the documented `sce_load_scripts` filter. A developer
+can therefore return `true` to load SCE on an otherwise excluded singular view,
+or return `false` to suppress both `dist/sce-editing.js` and
+`dist/sce-frontend.css`.
+
 ## Troubleshooting cache, proxy, migration, and inline controls
 
 SCE loads its frontend assets on singular content when the `sce_load_scripts`
@@ -518,11 +538,12 @@ Example: https://gist.github.com/ronalfy/6b4fec8b3ac55bc47f3f
 /**
 * Filter: sce_load_scripts
 *
-* Boolean to decide whether to load SCE scripts or not
+* Boolean to decide whether to load SCE scripts or not. The filter runs after
+* the optional asset-loading policies, so an explicit value takes precedence.
 *
 * @since 1.5.0
 *
-* @param bool  true to load scripts, false not
+* @param bool $load_scripts True to load scripts, false to suppress both SCE JS and CSS.
 */
 ```
 

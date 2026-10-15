@@ -80,6 +80,9 @@ It's impossible to style an inline comment editor for every theme.  We've includ
 = Where are the options? =
 You can find the options by logging into your Dashboard and going to Settings->Simple Comment Editing.
 
+= Can I limit where SCE frontend assets load? =
+Yes. Settings -> Simple Comment Editing includes opt-in policies to load assets on built-in WordPress posts only, or only where a comment flow is available. The posts-only policy excludes pages, WooCommerce products, and custom post types. The comment-availability policy still loads SCE for existing editable comments and supported Ajaxify Comments lazy loading. Both are disabled by default. Developers can use `sce_load_scripts` after these policies: returning `false` suppresses both SCE JavaScript and CSS, while `true` loads SCE on an excluded singular view.
+
 = What browsers have you tested this with? =
 Simple Comment Editing will work all the way back to IE10.
 
