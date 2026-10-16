@@ -163,6 +163,18 @@ Logged-in comment authors continue to use WordPress authentication.
   validated submission/ownership route above and render native comment text.
   The initializer alone cannot add SCE to a separate comment renderer.
 
+Browser-verified on WordPress 7.1.3 multisite, PHP 8.4.25, Twenty Twenty-Five
+1.4, and Chromium 147: Ajaxify Comments 3.2.2 supports guest/subscriber submission
+and immediate saving without a page reload; Lazy Load for Comments 2.1.0
+supports guest-owner controls and saving after REST-loaded insertion. Cancel
+restores the saved text. Separate non-owner browsers receive no controls and
+cannot save or delete another guest's comment. Replacing controls and repeating
+the initializer/callbacks produces one time request and one countdown.
+For Twenty Twenty-Five, configure Ajaxify's comments-container selector as
+`.wp-block-comments`; its default also matches the `#comments` heading and
+falls back to reloading. These checks do not verify BuddyBoss or a custom
+`admin-ajax.php` submission adapter.
+
 For release verification, test the actual AJAX and lazy-loading plugins with
 separate commenter and non-owner browsers. Confirm one time request/countdown,
 one save per click, successful immediate editing, denied non-owner requests,

@@ -46,6 +46,41 @@ class Functions_Test extends \WP_UnitTestCase {
 		$this->assertFalse( Functions::can_edit( $id, (int) get_comment( $id )->comment_post_ID ) );
 	}
 
+	/** A stale loop global must not grant ownership of the requested comment. */
+	public function test_stale_owned_global_cannot_authorize_another_comment() {
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$owned   = $this->create_comment( $user_id, 0, false );
+		$other   = self::factory()->comment->create(
+			array( 'comment_post_ID' => get_comment( $owned )->comment_post_ID )
+		);
+		wp_set_current_user( $user_id );
+		$GLOBALS['comment'] = get_comment( $owned );
+		$this->assertFalse( Functions::can_edit( $other, (int) get_comment( $other )->comment_post_ID ) );
+	}
+
+	/** Empty cookie and metadata values must never count as matching ownership. */
+	public function test_empty_ownership_values_cannot_edit() {
+		$id                         = $this->create_comment();
+		$_COOKIE[ key( $_COOKIE ) ] = '';
+		delete_comment_meta( $id, '_sce' );
+		$this->assertFalse( Functions::can_edit( $id, (int) get_comment( $id )->comment_post_ID ) );
+	}
+
+	/** Comment status is validated before any permission override. */
+	public function test_trashed_comment_cannot_edit() {
+		$id = $this->create_comment();
+		wp_set_comment_status( $id, 'trash' );
+		$this->assertFalse( Functions::can_edit( $id, (int) get_comment( $id )->comment_post_ID ) );
+	}
+
+	/** A missing comment is denied without dereferencing a null global. */
+	public function test_missing_comment_cannot_edit() {
+		$id      = $this->create_comment();
+		$post_id = (int) get_comment( $id )->comment_post_ID;
+		wp_delete_comment( $id, true );
+		$this->assertFalse( Functions::can_edit( $id, $post_id ) );
+	}
+
 	/** Post IDs must match the comment. */
 	public function test_mismatched_post_cannot_edit() {
 		$id = $this->create_comment();

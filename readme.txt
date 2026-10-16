@@ -81,6 +81,8 @@ Custom AJAX submitters must render through WordPress's native `comment_text()` p
 
 Lazy Load for Comments uses the DOM-insertion contract rather than a private plugin event; this is not a claim that every plugin-version combination has been verified. The BuddyBoss adapter is explicitly unverified and requires both native comment rendering and the validated server submission route. Test actual integrations with separate owner/non-owner browsers before release.
 
+The GitHub README records browser verification with Ajaxify Comments 3.2.2 and Lazy Load for Comments 2.1.0 on Twenty Twenty-Five, including the Ajaxify comments-container selector required by that theme.
+
 = Why doesn't this plugin come with any styles? =
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
