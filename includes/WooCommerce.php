@@ -44,15 +44,15 @@ class WooCommerce {
 			return $return;
 		}
 
-		// Get the rating.
-		$rating = filter_input( INPUT_POST, 'rating', FILTER_SANITIZE_NUMBER_INT );
+		// Return persisted metadata, never an unverified request value.
+		$rating = (int) get_comment_meta( $comment_id, 'rating', true );
 
 		// Check for a valid rating.
-		if ( ! $rating ) {
+		if ( $rating < 1 || $rating > 5 ) {
 			return $return;
 		}
 
-		$return['rating'] = absint( $rating );
+		$return['rating'] = $rating;
 		return $return;
 	}
 
@@ -69,12 +69,12 @@ class WooCommerce {
 			return;
 		}
 
-		// Get the rating.
-		$rating = filter_input( INPUT_POST, 'rating', FILTER_SANITIZE_NUMBER_INT );
+		// Validate without converting negative, fractional, or malformed input into a rating.
+		$rating = filter_input( INPUT_POST, 'rating', FILTER_VALIDATE_INT );
 		$nonce  = sanitize_text_field( filter_input( INPUT_POST, 'wooEditCommentNonce', FILTER_DEFAULT ) );
 
 		// Check for a valid rating.
-		if ( ! $rating ) {
+		if ( $rating < 1 || $rating > 5 ) {
 			return;
 		}
 
@@ -89,7 +89,10 @@ class WooCommerce {
 		}
 
 		// User can edit comment, change rating.
-		update_comment_meta( $comment_id, 'rating', absint( $rating ) );
+		if ( update_comment_meta( $comment_id, 'rating', $rating ) && class_exists( 'WC_Comments' ) ) {
+			// wp_update_comment() runs WooCommerce's count hook before this metadata changes.
+			\WC_Comments::clear_transients( $post_id );
+		}
 	}
 
 	/**
@@ -103,20 +106,21 @@ class WooCommerce {
 	 * @return string HTML markup.
 	 */
 	public static function add_woocommerce_fields( $markup, $post_id, $comment_id, $comment ) {
-		if ( 'review' !== $comment->comment_type ) {
+		if ( 'review' !== $comment->comment_type || ! function_exists( 'wc_review_ratings_enabled' ) ) {
 			return $markup;
 		}
 
 		// Get current rating.
 		$rating = get_comment_meta( $comment_id, 'rating', true );
-		if ( $rating && wc_review_ratings_enabled() ) {
-				$markup  = '<div class="comment-form-rating" data-selected-rating="' . esc_attr( $rating ) . '"><label for="sce-rating-' . esc_attr( $comment_id ) . '">' . esc_html__( 'Your rating', 'simple-comment-editing' ) . ( wc_review_ratings_required() ? '&nbsp;<span class="required">*</span>' : '' ) . '</label><select name="rating" id="sce-rating-' . esc_attr( $comment_id ) . '" required>
-					<option value="" ' . selected( 'none', $rating, false ) . '>' . esc_html__( 'Rate&hellip;', 'simple-comment-editing' ) . '</option>
-					<option value="5" ' . selected( '5', $rating, false ) . '>>' . esc_html__( 'Perfect', 'simple-comment-editing' ) . '</option>
+		if ( wc_review_ratings_enabled() ) {
+			$required    = wc_review_ratings_required() ? ' required' : '';
+			$markup      = '<div class="comment-form-rating" data-selected-rating="' . esc_attr( $rating ) . '"><label for="sce-rating-' . esc_attr( $comment_id ) . '">' . esc_html__( 'Your rating', 'simple-comment-editing' ) . ( wc_review_ratings_required() ? '&nbsp;<span class="required">*</span>' : '' ) . '</label><select name="rating" id="sce-rating-' . esc_attr( $comment_id ) . '"' . $required . '>
+					<option value="" ' . selected( '', $rating, false ) . '>' . esc_html__( 'Rate&hellip;', 'simple-comment-editing' ) . '</option>
+					<option value="5" ' . selected( '5', $rating, false ) . '>' . esc_html__( 'Perfect', 'simple-comment-editing' ) . '</option>
 					<option value="4" ' . selected( '4', $rating, false ) . '>' . esc_html__( 'Good', 'simple-comment-editing' ) . '</option>
 					<option value="3" ' . selected( '3', $rating, false ) . '>' . esc_html__( 'Average', 'simple-comment-editing' ) . '</option>
 					<option value="2" ' . selected( '2', $rating, false ) . '>' . esc_html__( 'Not that bad', 'simple-comment-editing' ) . '</option>
-					<option value="1" ' . selected( '1', $rating, false ) . '>>' . esc_html__( 'Very poor', 'simple-comment-editing' ) . '</option>
+					<option value="1" ' . selected( '1', $rating, false ) . '>' . esc_html__( 'Very poor', 'simple-comment-editing' ) . '</option>
 				</select></div>';
 				$markup .= wp_nonce_field( 'woocommerce-edit-comment_' . $comment_id, 'woo_edit_comment_nonce_' . $comment_id, false, false );
 		}

@@ -92,11 +92,103 @@ emitted as document events: `sceEditTextareaShow`, `sceCommentSavePre`,
 `sceCommentQuicktagsInit`. The existing `sceCommentSavePost` event remains
 available after a successful save.
 
+## AJAX-submitted and lazy-loaded comments
+
+SCE initializes on DOM readiness, including when its script executes after the
+page has loaded. A DOM observer initializes newly inserted SCE controls. Custom
+loaders can also call the public, root-scoped initializer **after** attaching
+their markup:
+
+```js
+// insertedComment is the connected comment element, not an HTML string.
+window.SCE.init( insertedComment );
+// Omitting the root initializes the current document.
+window.SCE.init();
+```
+
+Repeated calls reuse the same handlers and countdown, including while the time
+request is pending. Replacing a comment cancels the old countdown and releases
+its editor; stale responses cannot initialize the replacement. A failed time
+request can be retried by calling the initializer again. Existing
+`window.initEditCommentButton( button )`, `window.SCE_comments_updated( commentUrl )`,
+and the `wpacAfterUpdateComments` document event remain available.
+
+The initializer does not create edit markup or grant permission. The submitter
+or lazy loader must render through WordPress's native `comment_text()` path and
+return the current visitor's response, not shared cached author markup. Timer,
+save, and delete requests still require the existing nonce and ownership checks.
+
+### Guest ownership in an AJAX submitter
+
+Ordinary WordPress submissions establish the editing cookie while the comment
+is created. AJAX submitters using `admin-ajax.php` must explicitly opt in during
+their **existing validated creation flow**. The following fragment belongs in
+that handler, after its nonce, anti-spam, rate-limit, and submission checks and
+before any response output:
+
+```php
+// Opt in only around this handler's real WordPress comment creation.
+add_filter( 'sce_ajax_comment_submission', '__return_true' );
+try {
+	$comment = wp_handle_comment_submission( wp_unslash( $_POST ) );
+} finally {
+	remove_filter( 'sce_ajax_comment_submission', '__return_true' );
+}
+// Continue the submitter's existing WP_Error/success response handling.
+// On success, render the new comment using comment_text(), not raw content.
+```
+
+This is not a new endpoint or a complete submission handler. The filter is
+evaluated by SCE's `comment_post` callback for a newly created comment only.
+Never call `comment_posted()` or `generate_cookie_data()` with a client-supplied
+comment ID, and never bypass `sce_can_edit` or cookie verification. The original
+response sets the guest's cookie and can render their permission-checked
+controls immediately. Repeated creation callbacks preserve the original key.
+The browser must accept that same-origin response's cookies; another browser
+does not acquire ownership from knowing the comment ID or copying its markup.
+Logged-in comment authors continue to use WordPress authentication.
+
+### Compatibility and adapter boundaries
+
+- **WP Ajaxify Comments:** the existing event and URL callback are retained and
+  use the repeat-safe initializer. Its normal WordPress submission route does
+  not require an arbitrary-comment cookie endpoint.
+- **Lazy Load for Comments:** inserted markup is covered by the DOM observer;
+  there is no dependency on a private lazy-loader event. Rendering must still
+  use `comment_text()` and send the commenter's cookies. This describes the
+  integration contract, not an end-to-end verification claim for every version.
+- **BuddyBoss:** premium-theme integration is **unverified**. In its documented
+  post-insertion callback, call `window.SCE.init( insertedComment )` only after
+  its comment element is connected. Its server adapter must follow the
+  validated submission/ownership route above and render native comment text.
+  The initializer alone cannot add SCE to a separate comment renderer.
+
+Browser-verified on WordPress 7.1.3 multisite, PHP 8.4.25, Twenty Twenty-Five
+1.4, and Chromium 147: Ajaxify Comments 3.2.2 supports guest/subscriber submission
+and immediate saving without a page reload; Lazy Load for Comments 2.1.0
+supports guest-owner controls and saving after REST-loaded insertion. Cancel
+restores the saved text. Separate non-owner browsers receive no controls and
+cannot save or delete another guest's comment. Replacing controls and repeating
+the initializer/callbacks produces one time request and one countdown.
+For Twenty Twenty-Five, configure Ajaxify's comments-container selector as
+`.wp-block-comments`; its default also matches the `#comments` heading and
+falls back to reloading. These checks do not verify BuddyBoss or a custom
+`admin-ajax.php` submission adapter.
+
+For release verification, test the actual AJAX and lazy-loading plugins with
+separate commenter and non-owner browsers. Confirm one time request/countdown,
+one save per click, successful immediate editing, denied non-owner requests,
+and no browser-console or WordPress-log errors. Source-compatible callbacks
+alone are not evidence of a verified plugin-version combination.
+
 ## Optional frontend asset loading
 
-By default, SCE keeps its existing asset-loading behavior on singular content.
+SCE preloads assets on singular views with open comments or existing comments,
+so a first-time guest can use controls inserted after page load. Logged-in
+visitors, editing cookies, and WP Ajaxify remain loading signals. Archives and
+unrelated guest views with neither comments nor a form do not load these assets.
 In **Settings → Simple Comment Editing**, two opt-in policies can reduce that
-surface without changing the default:
+surface; both policies remain disabled by default:
 
 - **Load frontend assets on WordPress posts only** loads SCE on the built-in
   `post` type only. It excludes ordinary pages, WooCommerce products, and all
@@ -115,8 +207,8 @@ or return `false` to suppress both `dist/sce-editing.js` and
 ## Troubleshooting cache, proxy, migration, and inline controls
 
 SCE loads its frontend assets on singular content when the `sce_load_scripts`
-filter allows them. It initializes the controls that
-are present when the page `load` event fires. A cache, optimization plugin,
+filter allows them. It initializes existing controls on DOM readiness and newly
+inserted controls through its observer or `window.SCE.init( root )`. A cache, optimization plugin,
 proxy, migration, or dynamically replaced comment list can therefore make an
 otherwise valid installation appear broken. These checks isolate the observed
 failure; they do not establish a historical support report's root cause.
@@ -154,9 +246,9 @@ administrator, and remove the test comment afterwards.
    public support thread.
 
 If another plugin replaces or lazy-loads comments after the original page load,
-use its documented integration point to call the existing
-`window.initEditCommentButton( button )` for each new `.sce-edit-button`. The
-built-in Ajaxify Comments callback already performs that reinitialization.
+the observer initializes inserted SCE controls. Its documented integration point
+can also call `window.SCE.init( insertedComment )` explicitly; repeated calls are
+safe. See the AJAX-submission ownership requirements above when markup is absent.
 
 ### Cache and optimization isolation
 
