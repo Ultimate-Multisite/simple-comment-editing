@@ -164,17 +164,6 @@ class Settings extends Tabs {
 							<table class="form-table">
 								<tbody>
 									<tr>
-										<th scope="row"><?php esc_html_e( 'Reduced Motion', 'simple-comment-editing' ); ?></th>
-										<td>
-											<input type="hidden" value="false" name="options[reduce_motion]" />
-											<p>
-												<input id="sce-reduce-motion" type="checkbox" value="true" name="options[reduce_motion]" aria-describedby="sce-reduce-motion-description" <?php checked( true, $options['reduce_motion'] ); ?> />
-												<label for="sce-reduce-motion"><?php esc_html_e( 'Show authorized edit controls without the reveal animation', 'simple-comment-editing' ); ?></label>
-											</p>
-											<p id="sce-reduce-motion-description" class="description"><?php esc_html_e( 'Controls still wait for a server permission check, even with unlimited editing. The browser reduced-motion preference is always respected. This does not change who can edit or how long editing is allowed.', 'simple-comment-editing' ); ?></p>
-										</td>
-									</tr>
-									<tr>
 										<th scope="row"><?php esc_html_e( 'Quicktags Toolbar', 'simple-comment-editing' ); ?></th>
 										<td>
 											<input type="hidden" value="false" name="options[enable_quicktags]" />
