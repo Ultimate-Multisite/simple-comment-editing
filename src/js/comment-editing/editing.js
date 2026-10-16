@@ -37,30 +37,16 @@ window.addEventListener( 'load', () => {
 		// Get current comment.
 		const comment = document.querySelector( `#sce-edit-comment${ ajaxSaveParams.comment_id }` );
 
-		// Get star rating placeholder.
-		let starRating = null;
-
-		if ( null !== comment ) {
-			starRating = comment.querySelector( '.stars' );
+		if ( null === comment ) {
+			return ajaxSaveParams;
 		}
 
-		// Only send an edited rating when the SCE review editor has a selected star and nonce.
-		if ( null !== starRating ) {
-			// Get selected star.
-			const selectedStar = starRating.querySelector( '.active' );
-			const nonceElement = comment.querySelector( '#woo_edit_comment_nonce_' + ajaxSaveParams.comment_id );
-
-			if ( null === selectedStar || null === nonceElement ) {
-				return ajaxSaveParams;
-			}
-
-			// Add nonce to Ajax params.
+		// Read the form value, including when jQuery's star enhancement is unavailable.
+		const rating = comment.querySelector( '.comment-form-rating select[name="rating"]' );
+		const nonceElement = comment.querySelector( '#woo_edit_comment_nonce_' + ajaxSaveParams.comment_id );
+		if ( null !== rating && /^[1-5]$/.test( rating.value ) && null !== nonceElement ) {
 			ajaxSaveParams.wooEditCommentNonce = nonceElement.value;
-
-			// Add selected rating to Ajax params.
-			ajaxSaveParams.rating = selectedStar.textContent;
-
-			return ajaxSaveParams;
+			ajaxSaveParams.rating = rating.value;
 		}
 		return ajaxSaveParams;
 	} );
@@ -760,6 +746,7 @@ window.addEventListener( 'load', () => {
 				}
 
 				const selectedRating = $ratingContainer.data( 'selected-rating' );
+				$rating.val( selectedRating || '' );
 				$stars.find( 'a' ).removeClass( 'active' );
 				$stars.toggleClass( 'selected', Boolean( selectedRating ) );
 				if ( selectedRating ) {
@@ -804,6 +791,7 @@ window.addEventListener( 'load', () => {
 
 				// Update data param.
 				$ratingContainer.attr( 'data-selected-rating', ajaxData.rating ).data( 'selected-rating', ajaxData.rating );
+				$ratingContainer.find( 'select' ).val( ajaxData.rating );
 			} );
 
 			/**

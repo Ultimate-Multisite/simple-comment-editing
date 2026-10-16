@@ -261,6 +261,8 @@ The shape language is defined by **{Architectural Sharpness | Soft Modernism | P
 
 - The star picker is rendered only inside `.sce-edit-comment`; leave WooCommerce's native new-review rating control unchanged.
 - Retain the selected rating when the editor is reopened, and keep the select field available as the form value behind the enhanced star control.
+- Cancel/reopen resets both stars and the select to the last saved rating; optional unrated reviews remain unselected until a rating is chosen.
+- Save feedback uses persisted rating metadata, not unchecked request values. Rating edits also refresh WooCommerce's product rating aggregates.
 - Star links remain keyboard-focusable and use their visible one-to-five text as the accessible rating value.
 
 ### Links
