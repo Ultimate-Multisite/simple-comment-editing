@@ -28,7 +28,7 @@ The biggest differences:
 <ol>
 <li>Only anonymous users (and logged in users who don't have permission to edit comments) can edit their comments for a period of time (the default is 5 minutes).</li>
 <li>There are no styles included with this plugin.  For most themes, the appearance is acceptable.  For advanced customization, see the "Styles" section.</li>
-<li>There are no options.  Some defaults can be overwritten using filters.</li>
+<li>Settings control the editing timer, labels, deletion behavior, and optional Quicktags toolbar. Some defaults can also be overwritten using filters.</li>
 </ol>
 
 ## Installation
@@ -36,13 +36,179 @@ The biggest differences:
 1. Just unzip and upload the "simple-comment-editor" folder to your '/wp-content/plugins/' directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 
+## Development testing
+
+PHPUnit integration tests target PHP 7.4+ and run against real WordPress users,
+comments, AJAX handlers, and a disposable database. See [tests/README.md](tests/README.md)
+for setup, commands, the compatibility matrix, and coverage instructions.
+
+## Translations
+
+Bundled translations provide the default frontend labels and countdown text when
+no WordPress.org language pack is installed, including German and German Formal.
+WordPress.org and Loco translations can still override the bundled defaults.
+Labels customized in Settings are saved site values, so they are not translated
+automatically; update those saved values directly when changing site languages.
+
+## Optional editor integrations
+
+Plain-text textarea editing remains the default. To add WordPress's native HTML
+toolbar, enable **Quicktags Toolbar** in **Settings → Simple Comment Editing**.
+The option loads WordPress's Quicktags assets only on pages where SCE loads and
+creates one editor per open comment. It does not add TinyMCE, CKEditor, or any
+third-party editor dependency.
+
+External editors can use the textarea lifecycle instead. Leave Quicktags
+disabled for that textarea, then register actions with an application-specific
+`wp.hooks` namespace. Each action receives one object with `textarea`,
+`commentId`, and `postId`; reset also receives the previously saved `content`.
+
+```js
+const namespace = 'my-plugin/comment-editor';
+const editors = new Map();
+
+wp.hooks.addAction( 'sce.comment.editor.show', namespace, ( { textarea, commentId } ) => {
+	editors.set( commentId, mountMyEditor( textarea, textarea.value ) );
+} );
+
+wp.hooks.addAction( 'sce.comment.editor.save.pre', namespace, ( { textarea, commentId } ) => {
+	textarea.value = editors.get( commentId ).getContent();
+} );
+
+wp.hooks.addAction( 'sce.comment.editor.reset', namespace, ( { content, commentId } ) => {
+	editors.get( commentId ).setContent( content );
+} );
+
+wp.hooks.addAction( 'sce.comment.editor.destroy', namespace, ( { commentId } ) => {
+	editors.get( commentId ).destroy();
+	editors.delete( commentId );
+} );
+```
+
+`sce.comment.editor.save.pre` runs before SCE reads the textarea, so an adapter
+must synchronously copy its editor value there. The same lifecycle is also
+emitted as document events: `sceEditTextareaShow`, `sceCommentSavePre`,
+`sceCommentEditorReset`, `sceCommentEditorDestroy`, and
+`sceCommentQuicktagsInit`. The existing `sceCommentSavePost` event remains
+available after a successful save.
+
+## Optional frontend asset loading
+
+By default, SCE keeps its existing asset-loading behavior on singular content.
+In **Settings → Simple Comment Editing**, two opt-in policies can reduce that
+surface without changing the default:
+
+- **Load frontend assets on WordPress posts only** loads SCE on the built-in
+  `post` type only. It excludes ordinary pages, WooCommerce products, and all
+  custom post types.
+- **Load frontend assets only when comments are available** omits SCE when the
+  current singular content has no open comment form, existing comments, or
+  known editable-comment session. It keeps assets for closed content with an
+  existing editable comment, logged-in commenters with a pending comment, and
+  supported Ajaxify Comments lazy-loading flows.
+
+Both policies apply before the documented `sce_load_scripts` filter. A developer
+can therefore return `true` to load SCE on an otherwise excluded singular view,
+or return `false` to suppress both `dist/sce-editing.js` and
+`dist/sce-frontend.css`.
+
+## Troubleshooting cache, proxy, migration, and inline controls
+
+SCE loads its frontend assets on singular content when the `sce_load_scripts`
+filter allows them. It initializes the controls that
+are present when the page `load` event fires. A cache, optimization plugin,
+proxy, migration, or dynamically replaced comment list can therefore make an
+otherwise valid installation appear broken. These checks isolate the observed
+failure; they do not establish a historical support report's root cause.
+
+### Start with browser evidence
+
+Use a private/incognito window with the browser developer tools open, then
+leave a new test comment and reload the page. Test as the commenter, not as an
+administrator, and remove the test comment afterwards.
+
+1. **No edit markup:** inspect the rendered comment for `.sce-edit-comment`
+   and `.sce-edit-button`. If those elements are absent, capture the page URL,
+   the comment status, the visitor's login state, and the timer/settings in
+   effect. A custom comment loop must call WordPress's `comment_text()` path;
+   copying `comment_content` omits SCE's generated controls.
+2. **Markup is present but JavaScript is missing or errors:** in the Network
+   and Console panels, confirm that `dist/sce-editing.js` returns JavaScript
+   (not an HTML error page) and that `wp-i18n` and `wp-hooks` load before it.
+   When Quicktags Toolbar is enabled, `wp-editor` must also load first. Record
+   the first console error and the response/status for the failed asset.
+3. **Controls are hidden or disappear:** inspect the timer request and its
+   response before changing settings. SCE intentionally removes controls when
+   the server says the commenter cannot edit or the timer has expired. Do not
+   expose those controls with cached markup or client-side changes: the server
+   must continue to enforce nonce and comment-ownership checks.
+4. **Save or delete fails:** inspect the `admin-ajax.php` request, its status,
+   and its response while preserving the current comment text. Verify that the
+   request uses the current site's HTTP/HTTPS origin and carries the commenter's
+   cookies and nonce. A 403/nonce/auth response is not a reason to disable
+   anti-spam or other security protections.
+5. **A server error occurs:** obtain the complete exception and stack trace
+   from the server's WordPress/PHP error log, along with WordPress, PHP, theme,
+   SCE, and active cache/optimization-plugin versions. Do not post cookies,
+   nonces, full request bodies, credentials, or private comment content in a
+   public support thread.
+
+If another plugin replaces or lazy-loads comments after the original page load,
+use its documented integration point to call the existing
+`window.initEditCommentButton( button )` for each new `.sce-edit-button`. The
+built-in Ajaxify Comments callback already performs that reinitialization.
+
+### Cache and optimization isolation
+
+Purge every relevant layer before each retest: the WordPress/cache-plugin cache,
+the reverse-proxy or CDN cache, and the browser cache. Then test one change at
+a time and re-enable it after recording the result. Do not serve a shared cache
+entry that contains an authenticated or edit-author response to other visitors.
+
+For W3 Total Cache and similar tools, exclude these already-built files from
+JavaScript minification, combination, defer/delay rewriting, and re-minification
+while testing:
+
+```
+dist/sce-editing.js
+dist/integrations-admin.js
+```
+
+Purge the cache, load a newly created comment as its author, and confirm the
+asset responses and timer request again. If that restores the controls, add
+optimizations back one at a time to identify the conflicting transform instead
+of leaving all optimizations disabled.
+
+For Cloudflare or another proxy, separately test script optimization (including
+defer/delay or similar script rewriting), cached HTML, the origin's HTTP/HTTPS
+scheme, and client-IP forwarding. These are plausible integration points, not a
+known single root cause. Keep the proxy's security and anti-spam controls in
+place; make the narrowest documented exclusion needed for the affected asset or
+path, then purge and retest.
+
+### After a migration or domain change
+
+Confirm WordPress Address and Site Address use the expected canonical scheme
+and host. Compare the page URL and `admin-ajax.php` request origin, then check
+the commenter's cookies for the expected domain, path, and secure flag. Clear
+old browser cookies and every cache layer before creating a fresh test comment.
+If the controls work intermittently, collect a HAR or the failing request's URL,
+status, response headers, and first console error with cookies and request
+payloads removed.
+
+For a reproducible report, include the smallest standard-theme reproduction,
+the exact sequence, the active optimization/proxy settings, versions, and the
+privacy-safe browser evidence above. Cross-check dynamic comment replacement
+against the initialization guidance above and AJAX failures against the
+request/response checks before concluding that SCE itself is at fault.
+
 ## Frequently Asked Questions
 
 ### Why doesn't this plugin come with any styles?
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
 ### Where are the options?
-No options :) - Just simple comment editing.
+Log in to your Dashboard and open **Settings → Simple Comment Editing**.
 
 ### I want to style the editing interface.  Where do I start?
 See "Styles" section.
@@ -190,6 +356,109 @@ This is only used when retrieving a comment via Ajax and can be used by third-pa
 */
 ```
 
+### Custom fields that stay with the edited comment
+
+Use `sce_extra_fields_pre` when a field belongs before the comment textarea;
+use `sce_extra_fields` for fields after it. Both filters receive the post and
+comment IDs, and `sce_extra_fields_pre` also receives the current comment. Give
+each field an ID derived from `$comment_id`, then read it from that comment's
+editor in the JavaScript filter. This prevents two open editors from sharing a
+field value.
+
+The example below adds an optional title and a 1–5 rating. It uses the current
+WordPress hooks signature—`wp.hooks.addFilter( name, namespace, callback )`—and
+only adds values to the request when their fields exist and are non-empty.
+
+```php
+add_filter( 'sce_extra_fields_pre', function( $content, $post_id, $comment_id, $comment ) {
+	$title  = (string) get_comment_meta( $comment_id, '_my_sce_title', true );
+	$rating = absint( get_comment_meta( $comment_id, '_my_sce_rating', true ) );
+
+	return sprintf(
+		'<p><label for="my-sce-title-%1$d">Title</label> <input id="my-sce-title-%1$d" class="my-sce-title" type="text" value="%2$s" maxlength="120" /></p><p><label for="my-sce-rating-%1$d">Rating</label> <input id="my-sce-rating-%1$d" class="my-sce-rating" type="number" min="1" max="5" value="%3$d" /></p>',
+		absint( $comment_id ),
+		esc_attr( $title ),
+		$rating
+	);
+}, 10, 4 );
+
+add_action( 'sce_save_after', function( $comment_to_save, $post_id, $comment_id ) {
+	if ( isset( $_POST['my_sce_title'] ) ) {
+		$title = sanitize_text_field( wp_unslash( $_POST['my_sce_title'] ) );
+		// HTML maxlength counts UTF-16 code units, including two for astral characters.
+		$title_length                  = preg_match_all( '/[\s\S]/u', $title );
+		$supplementary_character_count = preg_match_all( '/[\x{10000}-\x{10FFFF}]/u', $title );
+		if (
+			'' !== $title
+			&& false !== $title_length
+			&& false !== $supplementary_character_count
+			&& ( $title_length + $supplementary_character_count ) <= 120
+		) {
+			update_comment_meta( $comment_id, '_my_sce_title', $title );
+		}
+	}
+
+	if ( isset( $_POST['my_sce_rating'] ) ) {
+		$raw_rating = wp_unslash( $_POST['my_sce_rating'] );
+		if ( is_string( $raw_rating ) && preg_match( '/^[1-5]$/D', $raw_rating ) ) {
+			$rating = absint( $raw_rating );
+			update_comment_meta( $comment_id, '_my_sce_rating', $rating );
+		}
+	}
+}, 10, 3 );
+```
+
+```js
+wp.hooks.addFilter(
+	'sce.comment.save.data',
+	'my-plugin/comment-fields',
+	( ajaxSaveParams ) => {
+		const editor = document.querySelector( `#sce-edit-comment${ ajaxSaveParams.comment_id }` );
+		if ( ! editor ) {
+			return ajaxSaveParams;
+		}
+
+		const title = editor.querySelector( '.my-sce-title' );
+		const rating = editor.querySelector( '.my-sce-rating' );
+		if ( title && title.value.trim() ) {
+			ajaxSaveParams.my_sce_title = title.value.trim();
+		}
+		if ( rating && rating.value ) {
+			ajaxSaveParams.my_sce_rating = rating.value;
+		}
+
+		return ajaxSaveParams;
+	}
+);
+```
+
+SCE performs its normal nonce and comment-ownership checks before
+`sce_save_after` runs. The callback must still sanitize and validate every
+request value. Its title check uses the same UTF-16 code units as the input's
+`maxlength`, and its rating check rejects values outside 1–5 before conversion.
+Do not delete or overwrite existing metadata when an optional field is absent:
+that can happen when a theme does not render the extra field.
+
+### Custom comment loops
+
+SCE attaches its editor through WordPress's native `comment_text` filter. A
+custom loop should call `comment_text( $comment )` rather than echoing
+`$comment->comment_content`; the latter bypasses formatting and the editor.
+
+```php
+foreach ( get_comments( array( 'post_id' => get_the_ID() ) ) as $comment ) {
+	?>
+	<article id="comment-<?php echo esc_attr( $comment->comment_ID ); ?>" <?php comment_class( '', $comment ); ?>>
+		<?php comment_text( $comment ); ?>
+	</article>
+	<?php
+}
+```
+
+Keep the comment object available to `comment_text()` and do not manually copy
+SCE's nonce, AJAX URL, or controls. SCE supplies them only when the current
+visitor may edit that specific comment.
+
 ### sce_buttons - Add extra buttons to the editing interface (aside from Cancel and Save)
 ```php
 /**
@@ -202,6 +471,17 @@ This is only used when retrieving a comment via Ajax and can be used by third-pa
 * @param string  $textarea_buttons Button HTML
 * @param int       $comment_id        Comment ID
 */
+```
+
+`sce_buttons` receives the complete generated button markup, so use it for
+safe, intentional HTML additions such as an icon or a help link. The
+`sce_text_save`, `sce_text_cancel`, and `sce_text_delete` filters are for text
+labels; SCE escapes their values before rendering.
+
+```php
+add_filter( 'sce_buttons', function( $buttons, $comment_id ) {
+	return $buttons . '<span class="my-sce-help" data-comment-id="' . absint( $comment_id ) . '">Need help?</span>';
+}, 10, 2 );
 ```
 
 ### sce_content - Modify the edit output HTML
@@ -269,11 +549,12 @@ Example: https://gist.github.com/ronalfy/6b4fec8b3ac55bc47f3f
 /**
 * Filter: sce_load_scripts
 *
-* Boolean to decide whether to load SCE scripts or not
+* Boolean to decide whether to load SCE scripts or not. The filter runs after
+* the optional asset-loading policies, so an explicit value takes precedence.
 *
 * @since 1.5.0
 *
-* @param bool  true to load scripts, false not
+* @param bool $load_scripts True to load scripts, false to suppress both SCE JS and CSS.
 */
 ```
 
@@ -605,6 +886,28 @@ The save/cancel buttons have been wrapped in a `div` with class `sce-comment-edi
 .sce-comment-edit-buttons .sce-comment-save { /* styles here */ }
 .sce-comment-edit-buttons .sce-comment-cancel { /* styles here */ }
 ```
+
+For an inline WP ULike-style action row, style the existing wrapper instead of
+moving controls outside it. SCE's JavaScript expects `.sce-edit-comment` to
+contain `.sce-textarea`, `.sce-comment-text`, and
+`.sce-comment-edit-buttons`.
+
+```css
+.sce-edit-comment .sce-comment-edit-buttons {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.sce-edit-comment .sce-comment-edit-buttons-group {
+	display: inline-flex;
+	gap: 0.25rem;
+}
+```
+
+This keeps Save, Cancel, Delete, and the timer inside their required hierarchy
+and preserves their native button behavior. Do not replace the buttons with
+links to `admin-ajax.php` or move them into arbitrary theme markup.
 
 ### Styling the Status Message
 The status message has been wrapped in a `div` with class `sce-status`.

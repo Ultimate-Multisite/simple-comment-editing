@@ -113,6 +113,8 @@ class Simple_Comment_Editing {
 	 * @see init action.
 	 */
 	public function init() {
+		load_plugin_textdomain( 'simple-comment-editing', false, Functions::get_plugin_slug() . '/languages/' );
+
 		new Output();
 
 		/**
@@ -143,7 +145,6 @@ class Simple_Comment_Editing {
 		add_action( 'comment_post', array( $this, 'comment_posted' ), 100, 1 );
 
 		// Loading scripts.
-		add_filter( 'sce_load_scripts', array( $this, 'maybe_load_scripts' ), 5, 1 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'add_scripts' ) );
 
 		// Init ajax.
@@ -268,15 +269,15 @@ class Simple_Comment_Editing {
 		$allow_edit        = apply_filters( 'sce_allow_edit_button', true );
 
 		if ( $allow_edit && ! $allow_edit_delete ) {
-			$sce_content .= sprintf( '<a class="sce-edit-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $click_to_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-edit-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d" aria-expanded="false">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $click_to_edit_text ) );
 		} elseif ( $allow_edit && $allow_edit_delete ) {
-			$sce_content .= sprintf( '<a class="sce-edit-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $click_to_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-edit-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d" aria-expanded="false">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $click_to_edit_text ) );
 			$sce_content .= '<span class="sce-seperator">&nbsp;&ndash;&nbsp;</span>';
-			$sce_content .= sprintf( '<a class="sce-delete-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $delete_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-delete-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $delete_edit_text ) );
 		} elseif ( ! $allow_edit && $allow_edit_delete ) {
-			$sce_content .= sprintf( '<a class="sce-delete-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $delete_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-delete-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $delete_edit_text ) );
 		} else {
-			$sce_content .= sprintf( '<a class="sce-edit-button-main" href="%s">%s</a>', esc_url( $ajax_edit_url ), esc_html( $click_to_edit_text ) );
+			$sce_content .= sprintf( '<button type="button" class="sce-edit-button-main" data-sce-ajax-url="%1$s" aria-controls="sce-edit-comment%2$d" aria-expanded="false">%3$s</button>', esc_url( $ajax_edit_url ), $comment_id, esc_html( $click_to_edit_text ) );
 		}
 
 		/**
@@ -318,7 +319,7 @@ class Simple_Comment_Editing {
 		*/
 		$textarea_content .= apply_filters( 'sce_extra_fields_pre', '', $post_id, $comment_id, $comment );
 		$textarea_content .= '<div class="sce-comment-textarea">';
-		$textarea_content .= '<textarea class="sce-comment-text" %s>%s</textarea>';
+		$textarea_content .= '<textarea id="sce-comment-textarea-%d" class="sce-comment-text" %s>%s</textarea>';
 		$textarea_content .= '</div><!-- .sce-comment-textarea -->';
 
 		/**
@@ -424,6 +425,7 @@ class Simple_Comment_Editing {
 		$textarea_button_content .= $textarea_buttons . '</div><!-- .sce-comment-edit-buttons -->';
 		$textarea_content         = sprintf(
 			$textarea_content,
+			$comment_id,
 			'style="max-width: 100%; min-height: 150px;"',
 			esc_textarea( $raw_content ),
 			$textarea_button_content
@@ -433,7 +435,7 @@ class Simple_Comment_Editing {
 		$sce_content .= $textarea_content . '</div><!-- .sce-edit-comment -->';
 
 		// Status Area.
-		$sce_content .= sprintf( '<div id="sce-edit-comment-status%d" class="sce-status" style="display: none;"></div><!-- .sce-status -->', $comment_id );
+		$sce_content .= sprintf( '<div id="sce-edit-comment-status%d" class="sce-status" role="status" aria-live="polite" style="display: none;"></div><!-- .sce-status -->', $comment_id );
 
 		/**
 		* Filter: sce_content
@@ -616,7 +618,7 @@ class Simple_Comment_Editing {
 	}
 
 	/**
-	 * Adds the necessary JavaScript for the plugin (only loads on posts/pages)
+	 * Adds the necessary JavaScript for the plugin on singular content.
 	 *
 	 * Called via the wp_enqueue_scripts
 	 *
@@ -627,27 +629,45 @@ class Simple_Comment_Editing {
 			return;
 		}
 
-		// Check if there are any cookies present, otherwise don't load the scripts - WPAC_PLUGIN_NAME is for wp-ajaxify-comments (if the plugin is installed, load the JavaScript file).
+		$load_scripts = $this->maybe_load_scripts( false );
+		if ( (bool) Options::get_options( false, 'load_scripts_posts_only' ) && ! is_singular( 'post' ) ) {
+			$load_scripts = false;
+		}
+		if ( (bool) Options::get_options( false, 'load_scripts_with_comments' ) && ! $this->has_usable_comment_flow() ) {
+			$load_scripts = false;
+		}
 
 		/**
 		 * Filter: sce_load_scripts
 		 *
-		 * Boolean to decide whether to load SCE scripts or not
+		 * Boolean to decide whether to load SCE scripts or not. This filter runs
+		 * after the configured asset-loading policies, so an explicit developer
+		 * value takes precedence over those policies.
 		 *
 		 * @since 1.5.0
 		 *
 		 * @param bool $load_scripts Whether to load scripts.
 		 */
-		$load_scripts = apply_filters( 'sce_load_scripts', false );
+		$load_scripts = apply_filters( 'sce_load_scripts', $load_scripts );
 		if ( ! $load_scripts ) {
 			return;
+		}
+
+		$enable_quicktags = (bool) Options::get_options( false, 'enable_quicktags' );
+		if ( $enable_quicktags ) {
+			wp_enqueue_editor();
+		}
+
+		$script_dependencies = array( 'wp-i18n', 'wp-hooks' );
+		if ( $enable_quicktags ) {
+			$script_dependencies[] = 'wp-editor';
 		}
 
 		$main_script_uri = Functions::get_plugin_url( '/dist/sce-editing.js' );
 		wp_enqueue_script(
 			'simple-comment-editing',
 			$main_script_uri,
-			array( 'wp-i18n', 'wp-hooks' ),
+			$script_dependencies,
 			SCE_VERSION,
 			true
 		);
@@ -668,8 +688,8 @@ class Simple_Comment_Editing {
 		*/
 		do_action( 'sce_scripts_loaded' );
 
-		/* For translations in JS */
-		wp_set_script_translations( 'simple-comment-editing', 'simple-comment-editing' );
+		/* For translations in JS. */
+		wp_set_script_translations( 'simple-comment-editing', 'simple-comment-editing', Functions::get_plugin_dir( '/languages' ) );
 
 		/**
 		 * Filter: sce_allow_delete_confirmation
@@ -693,6 +713,7 @@ class Simple_Comment_Editing {
 				'empty_comment'             => apply_filters( 'sce_empty_comment', self::$errors->get_error_message( 'comment_empty' ) ),
 				'allow_delete'              => self::$allow_delete,
 				'allow_delete_confirmation' => $allow_delete_confirmation,
+				'enable_quicktags'          => $enable_quicktags,
 				'ajax_url'                  => admin_url( 'admin-ajax.php', self::$scheme ),
 				'nonce'                     => wp_create_nonce( 'sce-general-ajax-nonce' ),
 				'timer_appearance'          => sanitize_text_field( Options::get_options( false, 'timer_appearance' ) ),
@@ -893,9 +914,7 @@ class Simple_Comment_Editing {
 	}
 
 	/**
-	 * Whether to load scripts or not. Will load scripts if logged in, has Ajax comments, or has a cookie.
-	 *
-	 * Called via the sce_load_scripts filter
+	 * Whether SCE's existing edit signals request scripts.
 	 *
 	 * @since 1.5.0
 	 *
@@ -908,22 +927,55 @@ class Simple_Comment_Editing {
 			return true;
 		}
 
-		/* Return True if user is logged in */
-		if ( is_user_logged_in() ) {
-			return true;
-		}
+		return $yes || $this->has_editing_cookie();
+	}
 
+	/**
+	 * Determines whether the current visitor has an SCE editing cookie.
+	 *
+	 * @since 3.4.2
+	 *
+	 * @return bool True when an SCE editing cookie is present.
+	 */
+	private function has_editing_cookie() {
 		if ( empty( $_COOKIE ) ) {
 			return false;
 		}
-		$has_cookie = false;
 		foreach ( $_COOKIE as $cookie_name => $cookie_value ) {
 			if ( substr( $cookie_name, 0, 20 ) === 'SimpleCommentEditing' ) {
-				$has_cookie = true;
-				break;
+				return true;
 			}
 		}
-		return $has_cookie;
+		return false;
+	}
+
+	/**
+	 * Determines whether the current singular content has a usable comment flow.
+	 *
+	 * @since 3.4.2
+	 *
+	 * @return bool True when SCE may need frontend assets.
+	 */
+	private function has_usable_comment_flow() {
+		if ( defined( 'WPAC_PLUGIN_NAME' ) || comments_open() || get_comments_number() > 0 || $this->has_editing_cookie() ) {
+			return true;
+		}
+
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		$comments = get_comments(
+			array(
+				'post_id' => get_queried_object_id(),
+				'user_id' => get_current_user_id(),
+				'status'  => 'all',
+				'number'  => 1,
+				'fields'  => 'ids',
+			)
+		);
+
+		return ! empty( $comments );
 	}
 
 	/**

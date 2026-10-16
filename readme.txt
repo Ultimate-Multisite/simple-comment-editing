@@ -36,14 +36,55 @@ Allow your users to edit their comments and WooCommerce reviews for a period of 
 = Can users edit WooCommerce review ratings? =
 Yes. The review editor keeps its rating control scoped to the existing review being edited, while the native new-review form continues to use WooCommerce's own rating control.
 
+= Why are the edit controls missing, hidden, or unable to save? =
+First identify what the browser received. Inspect the comment for SCE markup,
+then use the browser Network and Console panels to check that
+`dist/sce-editing.js` loads as JavaScript after `wp-i18n` and `wp-hooks` (and
+`wp-editor` when Quicktags is enabled). Inspect the timer or `admin-ajax.php`
+request before changing settings: an expired timer, a nonce/permission failure, or a
+server error needs a different fix. Preserve the comment text and do not expose
+controls by bypassing SCE's server-side ownership or nonce checks.
+
+= How should I test a cache, CDN, proxy, or migration problem? =
+Use a new test comment in a private browser window, then purge the WordPress,
+proxy/CDN, and browser caches before every retest. For W3 Total Cache and
+similar tools, temporarily exclude `dist/sce-editing.js` and
+`dist/integrations-admin.js` from minification, combination, defer/delay, and
+re-minification; purge and retest before adding optimizations back one at a
+time. Do not share cached authenticated or edit-author pages with other
+visitors. For Cloudflare, separately test script optimization, cached HTML,
+origin HTTP/HTTPS scheme, and client-IP forwarding; none is a known universal
+root cause. Keep security and anti-spam protections enabled and use the
+narrowest documented exclusion needed.
+
+After a migration, verify WordPress Address and Site Address, the page and
+`admin-ajax.php` origins, and the commenter's cookie domain/path/secure flag.
+For an unresolved failure, collect the first console error, asset/AJAX status
+and response headers, full server exception/stack trace, versions, and a
+standard-theme reproduction. Remove cookies, nonces, secret values, private
+comment content, and request bodies from any public report. The GitHub README
+has the full cache/proxy/migration diagnostic guide.
+
 = Was this plugin called Comment Edit Core? =
 Yes. The plugin has been renamed back to Simple Comment Editing.
+
+= How do translations work? =
+Bundled translations provide the default frontend labels and countdown text when no WordPress.org language pack is installed, including German and German Formal. WordPress.org and Loco translations can still override the bundled defaults. Labels customized in Settings are saved site values, so update those values directly when changing site languages.
+
+= Can commenters use an HTML toolbar? =
+Yes. Enable Quicktags Toolbar in Settings -> Simple Comment Editing to add WordPress's native Quicktags toolbar to the comment editor. It is disabled by default, does not load TinyMCE or CKEditor, and can be left disabled when another plugin uses the documented JavaScript editor lifecycle.
+
+= Can I add custom fields or use a custom comment loop? =
+Yes. The integration guide in the GitHub README documents comment-scoped extra fields, safe metadata saving, custom loops that call WordPress's native `comment_text()` path, button HTML, and inline action-row styling. Keep SCE's editor wrappers and controls intact so its nonce, ownership checks, Save, Cancel, and Delete actions continue to work.
 
 = Why doesn't this plugin come with any styles? =
 It's impossible to style an inline comment editor for every theme.  We've included basic HTML markup that is easily stylable to fit your theme.
 
 = Where are the options? =
 You can find the options by logging into your Dashboard and going to Settings->Simple Comment Editing.
+
+= Can I limit where SCE frontend assets load? =
+Yes. Settings -> Simple Comment Editing includes opt-in policies to load assets on built-in WordPress posts only, or only where a comment flow is available. The posts-only policy excludes pages, WooCommerce products, and custom post types. The comment-availability policy still loads SCE for existing editable comments and supported Ajaxify Comments lazy loading. Both are disabled by default. Developers can use `sce_load_scripts` after these policies: returning `false` suppresses both SCE JavaScript and CSS, while `true` loads SCE on an excluded singular view.
 
 = What browsers have you tested this with? =
 Simple Comment Editing will work all the way back to IE10.
@@ -61,6 +102,12 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 5. Light button theme.
 
 == Changelog ==
+
+= Unreleased =
+* New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
+* Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
+* Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
+* Fix: Load bundled frontend translations and add German Formal countdown support.
 
 = 3.4.1 =
 * Released 2026-09-21

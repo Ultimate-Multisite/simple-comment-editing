@@ -8,13 +8,16 @@ import sendCommand from '../SendCommand';
 const { __, _n } = wp.i18n;
 
 // get hooks.
-const { addFilter, applyFilters } = wp.hooks;
+const { addFilter, applyFilters, doAction } = wp.hooks;
 
 // Get the timer placeholder.
 const timers = [];
 
 // Get the textareas placeholder.
 const textareas = [];
+
+// Track active editors so repeated opens cannot create duplicate instances.
+const editorInstances = [];
 
 // Onload, get dom entries.
 window.addEventListener( 'load', () => {
@@ -97,6 +100,164 @@ window.addEventListener( 'load', () => {
 	const showEditButton = ( button ) => {
 		button.classList.remove( 'sce-hide' );
 		button.classList.add( 'sce-show' );
+	};
+
+	/**
+	 * Gets the AJAX URL from an inline action.
+	 *
+	 * @param {Element} action The inline action.
+	 * @return {string} The AJAX URL.
+	 */
+	const getAjaxUrl = ( action ) => action.dataset.sceAjaxUrl || action.getAttribute( 'href' );
+
+	/**
+	 * Gets a useful error message from a WordPress AJAX response.
+	 *
+	 * @param {Object} response The Axios response, when available.
+	 * @param {string} fallback The fallback error message.
+	 * @return {string} The error message.
+	 */
+	const getErrorMessage = ( response, fallback ) => {
+		const responseData = response && response.data ? response.data : {};
+		const data = responseData.data || {};
+		return data.error || data.message || responseData.error || fallback;
+	};
+
+	/**
+	 * Shows an editor status message without rendering server content as HTML.
+	 *
+	 * @param {number}  commentId The comment ID.
+	 * @param {string}  message   The message to show.
+	 * @param {boolean} isError   Whether the message is an error.
+	 */
+	const showStatus = ( commentId, message, isError = false ) => {
+		const status = document.querySelector( `#sce-edit-comment-status${ commentId }` );
+		if ( null === status ) {
+			return;
+		}
+
+		status.className = '';
+		status.classList.add( 'sce-status' );
+		if ( isError ) {
+			status.classList.add( 'error' );
+		}
+		status.setAttribute( 'aria-live', isError ? 'assertive' : 'polite' );
+		status.textContent = message;
+		status.style.display = 'block';
+	};
+
+	/**
+	 * Dispatch a documented editor lifecycle event and WordPress hook.
+	 *
+	 * @param {string} eventName The document event name.
+	 * @param {string} hookName  The WordPress action name.
+	 * @param {Object} detail    The editor lifecycle data.
+	 */
+	const dispatchEditorLifecycle = ( eventName, hookName, detail ) => {
+		document.dispatchEvent( new CustomEvent( eventName, { detail } ) );
+		doAction( hookName, detail );
+	};
+
+	/**
+	 * Initialize an optional native Quicktags editor exactly once per comment.
+	 *
+	 * @param {Element} textarea  The comment textarea.
+	 * @param {number}  commentId The comment ID.
+	 * @param {number}  postId    The post ID.
+	 */
+	const initializeCommentEditor = ( textarea, commentId, postId ) => {
+		if ( editorInstances[ commentId ] ) {
+			return;
+		}
+
+		const editor = {
+			textareaId: textarea.id,
+			quicktags: false,
+		};
+		editorInstances[ commentId ] = editor;
+
+		if ( ! simple_comment_editing.enable_quicktags || ! wp.editor || 'function' !== typeof wp.editor.initialize ) {
+			return;
+		}
+
+		wp.editor.initialize( textarea.id, {
+			mediaButtons: false,
+			quicktags: true,
+			tinymce: false,
+		} );
+		editor.quicktags = true;
+		dispatchEditorLifecycle( 'sceCommentQuicktagsInit', 'sce.comment.editor.quicktags.init', {
+			textarea,
+			commentId,
+			postId,
+		} );
+	};
+
+	/**
+	 * Remove an editor after consumers have released their own editor instance.
+	 *
+	 * @param {Element} textarea  The comment textarea.
+	 * @param {number}  commentId The comment ID.
+	 * @param {number}  postId    The post ID.
+	 */
+	const destroyCommentEditor = ( textarea, commentId, postId ) => {
+		const editor = editorInstances[ commentId ];
+		if ( ! editor ) {
+			return;
+		}
+
+		dispatchEditorLifecycle( 'sceCommentEditorDestroy', 'sce.comment.editor.destroy', {
+			textarea,
+			commentId,
+			postId,
+		} );
+		if ( editor.quicktags && wp.editor && 'function' === typeof wp.editor.remove ) {
+			wp.editor.remove( editor.textareaId );
+		}
+		delete editorInstances[ commentId ];
+	};
+
+	/**
+	 * Disables or enables each editor button and inline action.
+	 *
+	 * @param {Element} wrapper  The comment editor wrapper.
+	 * @param {boolean} disabled Whether to disable the controls.
+	 */
+	const setEditorControlsDisabled = ( wrapper, disabled ) => {
+		wrapper.querySelectorAll( 'button' ).forEach( ( editorButton ) => {
+			editorButton.disabled = disabled;
+		} );
+		wrapper.querySelectorAll( '.sce-edit-button-main, .sce-delete-button-main' ).forEach( ( action ) => {
+			action.setAttribute( 'aria-disabled', disabled ? 'true' : 'false' );
+		} );
+	};
+
+	/**
+	 * Restores an editor after an AJAX response.
+	 *
+	 * @param {Element} wrapper      The comment editor wrapper.
+	 * @param {Element} editButton   The edit action.
+	 * @param {boolean} showTextArea Whether to show the editor.
+	 */
+	const restoreEditor = ( wrapper, editButton, showTextArea ) => {
+		const editor = wrapper.querySelector( '.sce-textarea' );
+		const loading = wrapper.querySelector( '.sce-loading' );
+		const actionWrapper = wrapper.querySelector( '.sce-edit-button' );
+
+		setEditorControlsDisabled( wrapper, false );
+		wrapper.dataset.sceSubmitting = 'false';
+		if ( null !== loading ) {
+			loading.style.display = 'none';
+		}
+		if ( null !== editor ) {
+			editor.style.display = showTextArea ? 'block' : 'none';
+		}
+		if ( null !== actionWrapper ) {
+			actionWrapper.style.display = showTextArea ? 'none' : 'block';
+		}
+		if ( null !== editButton ) {
+			editButton.setAttribute( 'aria-expanded', showTextArea ? 'true' : 'false' );
+		}
 	};
 
 	/**
@@ -190,31 +351,52 @@ window.addEventListener( 'load', () => {
 	 * @param {string}  ajaxUrl   The ajax url.
 	 */
 	const deleteComment = async( element, commentId, postId, nonce, ajaxUrl ) => {
-		//Remove elements
-		element.parentNode.remove();
-		await sendCommand( 'sce_delete_comment', { comment_id: commentId, post_id: postId, nonce }, ajaxUrl ).then( ( response ) => {
-			if ( ! response.data.success ) {
-				alert( simple_comment_editing.comment_deleted_error );
-			} else {
-				const status = document.querySelector( '#sce-edit-comment-status' + commentId );
+		const wrapper = element.closest( '.sce-edit-comment' );
 
-				// Remove all classes.
-				status.classList.remove( 'sce-status', 'sce-status-error', 'sce-status-updated' );
-				status.classList.add( 'sce-status', 'updated' );
-				status.innerHTML = simple_comment_editing.comment_deleted;
-				status.style.display = 'block';
-				setTimeout( function() {
-					document.querySelector( '#comment-' + commentId ).remove();
-				}, 3000 ); //Attempt to remove the comment from the theme interface
+		if ( 'true' === wrapper.dataset.sceSubmitting ) {
+			return;
+		}
+
+		const editButton = wrapper.querySelector( '.sce-edit-button-main' );
+		const editor = wrapper.querySelector( '.sce-textarea' );
+		const wasEditing = null !== editor && 'none' !== editor.style.display;
+		const loading = wrapper.querySelector( '.sce-loading' );
+
+		wrapper.dataset.sceSubmitting = 'true';
+		setEditorControlsDisabled( wrapper, true );
+		if ( null !== loading ) {
+			loading.style.display = 'block';
+		}
+
+		try {
+			const response = await sendCommand( 'sce_delete_comment', { comment_id: commentId, post_id: postId, nonce }, ajaxUrl );
+			if ( ! response.data || true !== response.data.success ) {
+				throw new Error( getErrorMessage( response, simple_comment_editing.comment_deleted_error ) );
 			}
-			return response;
-		} );
+
+			showStatus( commentId, simple_comment_editing.comment_deleted );
+			destroyCommentEditor( wrapper.querySelector( '.sce-comment-text' ), commentId, postId );
+			setTimeout( function() {
+				const comment = document.querySelector( '#comment-' + commentId );
+				if ( null !== comment ) {
+					comment.remove();
+				}
+				wrapper.remove();
+			}, 3000 ); // Attempt to remove the comment from the theme interface.
+		} catch ( error ) {
+			restoreEditor( wrapper, editButton, wasEditing );
+			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
+		}
 	};
 
 	// Function to run to initialize the edit comment buttons.
 	window.initEditCommentButton = ( button ) => {
 		// Get first link
-		const ajaxUrl = button.querySelector( 'a:first-of-type' ).getAttribute( 'href' );
+		const firstAction = button.querySelector( '.sce-edit-button-main, .sce-delete-button-main' );
+		if ( null === firstAction ) {
+			return;
+		}
+		const ajaxUrl = getAjaxUrl( firstAction );
 
 		// Get comment ID from URL query param.
 		const urlParams = new URLSearchParams( ajaxUrl );
@@ -225,6 +407,9 @@ window.addEventListener( 'load', () => {
 		// Get the time left for the comment.
 		getTimeLeft( commentId, postId, simple_comment_editing.nonce, ajaxUrl ).then( ( response ) => {
 			// Get the timer element.
+			if ( ! response.data || true !== response.data.success || ! response.data.data ) {
+				throw new Error( getErrorMessage( response, simple_comment_editing.comment_deleted_error ) );
+			}
 			const { data } = response.data;
 			let { minutes, seconds } = data;
 			const { can_edit } = data;
@@ -299,7 +484,8 @@ window.addEventListener( 'load', () => {
 					let timer_seconds = timers[ commentId ].seconds - 1;
 					let timer_minutes = timers[ commentId ].minutes;
 					if ( timer_minutes <= 0 && timer_seconds <= 0 ) {
-						//Remove elements
+						// Remove any editor instance before its wrapper leaves the page.
+						destroyCommentEditor( button.parentNode.querySelector( '.sce-comment-text' ), commentId, postId );
 						button.parentNode.remove();
 						return;
 					}
@@ -342,6 +528,9 @@ window.addEventListener( 'load', () => {
 				},
 			};
 			window.setTimeout( timers[ commentId ].timer, 1000 );
+		} ).catch( ( error ) => {
+			showEditButton( button );
+			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		} );
 
 		//Set up event for when the edit button is clicked
@@ -349,6 +538,10 @@ window.addEventListener( 'load', () => {
 		if ( null !== editButton ) {
 			editButton.addEventListener( 'click', ( e ) => {
 				e.preventDefault();
+				const editButtonWrapper = editButton.closest( '.sce-edit-comment' );
+				if ( 'true' === editButtonWrapper.dataset.sceSubmitting ) {
+					return;
+				}
 				const statusElement = document.querySelector( `#sce-edit-comment-status${ commentId }` );
 				if ( null !== statusElement ) {
 					statusElement.classList.remove( 'sce-error' );
@@ -357,12 +550,13 @@ window.addEventListener( 'load', () => {
 					statusElement.style.display = 'none';
 				}
 				//Hide the edit button and show the textarea
-				const editButtonWrapper = editButton.closest( '.sce-edit-comment' );
-				editButtonWrapper.querySelectorAll( '.sce-textarea button' ).disabled = false;
+				setEditorControlsDisabled( editButtonWrapper, false );
 				editButtonWrapper.querySelector( '.sce-textarea' ).style.display = 'block';
 				editButton.parentNode.style.display = 'none';
+				editButton.setAttribute( 'aria-expanded', 'true' );
 
 				const textarea = editButtonWrapper.querySelector( '.sce-textarea textarea:first-of-type' );
+				initializeCommentEditor( textarea, commentId, postId );
 				const showEditTextAreaEvent = new CustomEvent( 'sceEditTextareaShow', {
 					detail: {
 						textarea,
@@ -371,6 +565,11 @@ window.addEventListener( 'load', () => {
 					},
 				} );
 				document.dispatchEvent( showEditTextAreaEvent );
+				doAction( 'sce.comment.editor.show', {
+					textarea,
+					commentId,
+					postId,
+				} );
 				textarea.focus();
 			} );
 
@@ -409,12 +608,19 @@ window.addEventListener( 'load', () => {
 			if ( null !== cancelButton ) {
 				cancelButton.addEventListener( 'click', ( e ) => {
 					e.preventDefault();
-					//Hide the textarea and show the edit button
+					// Hide the textarea and restore the last saved content.
 					const editButtonWrapper = cancelButton.closest( '.sce-edit-comment' );
-					editButtonWrapper.querySelector( '.sce-textarea' ).style.display = 'none';
-					editButtonWrapper.querySelector( '.sce-edit-button' ).style.display = 'block';
-
-					document.querySelector( `#sce-edit-comment${ commentId } textarea` ).value = textareas[ commentId ];
+					const textarea = editButtonWrapper.querySelector( '.sce-textarea textarea:first-of-type' );
+					const savedContent = textareas[ commentId ];
+					textarea.value = savedContent;
+					dispatchEditorLifecycle( 'sceCommentEditorReset', 'sce.comment.editor.reset', {
+						textarea,
+						commentId,
+						postId,
+						content: savedContent,
+					} );
+					destroyCommentEditor( textarea, commentId, postId );
+					restoreEditor( editButtonWrapper, editButton, false );
 				} );
 			}
 
@@ -423,38 +629,46 @@ window.addEventListener( 'load', () => {
 			if ( null !== saveButton ) {
 				saveButton.addEventListener( 'click', ( e ) => {
 					e.preventDefault();
+					const editorWrapper = button.closest( '.sce-edit-comment' );
+					if ( 'true' === editorWrapper.dataset.sceSubmitting ) {
+						return;
+					}
 
 					//Disable all buttons.
-					button.parentNode.querySelectorAll( '.sce-textarea button' ).disabled = true;
+					editorWrapper.dataset.sceSubmitting = 'true';
+					setEditorControlsDisabled( editorWrapper, true );
 					button.parentNode.querySelector( '.sce-textarea' ).style.display = 'none';
 					button.parentNode.querySelector( '.sce-loading' ).style.display = 'block';
 
-					//Save the comment
+					// Give native and external editors a synchronous chance to update the textarea.
 					const textarea = button.parentNode.querySelector( '.sce-textarea textarea:first-of-type' );
+					dispatchEditorLifecycle( 'sceCommentSavePre', 'sce.comment.editor.save.pre', {
+						button,
+						textarea,
+						commentId,
+						postId,
+					} );
 					const commentToSave = textarea.value.trim();
 
 					//If the comment is blank, see if the user wants to delete their comment
 					if ( commentToSave === '' && simple_comment_editing.allow_delete ) {
 						if ( confirm( simple_comment_editing.empty_comment ) ) {
+							editorWrapper.dataset.sceSubmitting = 'false';
 							deleteComment( button, commentId, postId, nonce, ajaxUrl );
-						} else {
-							//Revert value.
-							textarea.value = textareas[ commentId ];
-							button.parentNode.querySelectorAll( '.sce-textarea button' ).disabled = false;
-							button.style.display = 'block';
+							return;
 						}
-					}
 
-					// Set up pre save event.
-					const savePreEvent = new CustomEvent( 'sceCommentSavePre', {
-						detail: {
-							button,
+						//Revert value.
+						textarea.value = textareas[ commentId ];
+						dispatchEditorLifecycle( 'sceCommentEditorReset', 'sce.comment.editor.reset', {
 							textarea,
 							commentId,
 							postId,
-						},
-					} );
-					document.dispatchEvent( savePreEvent );
+							content: textareas[ commentId ],
+						} );
+						restoreEditor( editorWrapper, editButton, true );
+						return;
+					}
 
 					// Save the comment.
 					let ajaxSaveParams = {
@@ -477,15 +691,8 @@ window.addEventListener( 'load', () => {
 					ajaxSaveParams = applyFilters( 'sce.comment.save.data', ajaxSaveParams );
 
 					saveComment( 'sce_save_comment', ajaxSaveParams, ajaxUrl ).then( ( response ) => {
-						// Hide loading.
-						button.parentNode.querySelector( '.sce-loading' ).style.display = 'none';
-
-						// Show the edit button.
-						button.style.display = 'block';
-
-						// Check if no errors.
 						const { data } = response;
-						if ( ! data.errors ) {
+						if ( data && true === data.success && data.data && 'string' === typeof data.data.comment_text ) {
 							// Update comment HTML.
 							document.querySelector( `#sce-comment${ commentId }` ).innerHTML = data.data.comment_text;
 
@@ -503,24 +710,22 @@ window.addEventListener( 'load', () => {
 								},
 							} );
 							document.dispatchEvent( savePostEvent );
+							doAction( 'sce.comment.editor.save.post', {
+								button,
+								textarea,
+								commentId,
+								postId,
+								ajaxData: data.data,
+							} );
+							destroyCommentEditor( textarea, commentId, postId );
+							restoreEditor( editorWrapper, editButton, false );
 						} else {
-							if ( data.data.remove === true ) {
-								// Remove event handlers.
-								button.parentNode.querySelector( '.sce-textarea' ).removeEventListener( 'submit' );
-								button.removeEventListener( 'click' );
-
-								// Remove elements.
-								button.parentNode.remove();
-							}
-
-							// Clear all classes from status area.
-							document.querySelector( `#sce-edit-comment-status${ commentId }` ).className = '';
-
-							// Add class to status area and show it.
-							document.querySelector( `#sce-edit-comment-status${ commentId }` ).classList.add( 'sce-status', 'error' );
-							document.querySelector( `#sce-edit-comment-status${ commentId }` ).innerHTML = data.data.error;
-							document.querySelector( `#sce-edit-comment-status${ commentId }` ).style.display = 'block';
+							restoreEditor( editorWrapper, editButton, true );
+							showStatus( commentId, getErrorMessage( response, simple_comment_editing.comment_deleted_error ), true );
 						}
+					} ).catch( ( error ) => {
+						restoreEditor( editorWrapper, editButton, true );
+						showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 					} );
 				} );
 			}

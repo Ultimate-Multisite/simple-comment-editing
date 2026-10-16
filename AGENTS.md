@@ -4,8 +4,9 @@
 
 ## Quick Reference
 
-- **Build**: `# TODO: add build command`
-- **Test**: `# TODO: add test command`
+- **Build**: `npm run build`
+- **Test**: `composer test` (PHP 7.4+, dedicated database; see `tests/README.md`)
+- **Quality**: `composer lint` and `npm run lint:js`
 - **Deploy**: `# TODO: add deploy command`
 
 ## Project Overview
