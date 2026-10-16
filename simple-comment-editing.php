@@ -740,22 +740,24 @@ class Simple_Comment_Editing {
 	 * @param int $comment_id The Comment ID.
 	 */
 	public function comment_posted( $comment_id ) {
-		$comment        = get_comment( $comment_id, OBJECT );
-		$post_id        = $comment->comment_post_ID;
-		$post           = get_post( $post_id, OBJECT );
-		$comment_status = $comment->comment_approved;
-
-		// Do some initial checks to weed out those who shouldn't be able to have editable comments.
-		if ( 'spam' === $comment_status ) {
-			return; // Marked as spam - no editing allowed.
+		$comment = get_comment( $comment_id, OBJECT );
+		if ( ! $comment || ! in_array( (string) $comment->comment_approved, array( '0', '1' ), true ) ) {
+			return;
+		}
+		$post_id = $comment->comment_post_ID;
+		$post    = get_post( $post_id, OBJECT );
+		if ( ! $post || get_comment_meta( $comment_id, '_sce', true ) ) {
+			return; // Never replace an existing ownership key on repeated hooks.
 		}
 
 		// Remove expired comments.
 		$this->remove_security_keys();
 
 		$user_id = Functions::get_user_id();
+		if ( (int) $comment->user_id !== $user_id ) {
+			return; // Creating a comment on behalf of another user grants no ownership.
+		}
 
-		// Don't set a cookie if a comment is posted via Ajax.
 		/**
 		 * Filter: sce_can_edit_cookie_bypass
 		 * Bypass the cookie based user verification.
@@ -775,10 +777,18 @@ class Simple_Comment_Editing {
 			$cookie_bypass = true;
 			update_comment_meta( $comment_id, '_sce', 'post_author' );
 		}
-		if ( ! defined( 'DOING_AJAX' ) && ! defined( 'EPOCH_API' ) ) {
-			if ( false === $cookie_bypass ) {
-				$this->generate_cookie_data( $post_id, $comment_id, 'setcookie' );
-			}
+		/**
+		 * Opt a validated AJAX submitter into ownership during comment_post only.
+		 *
+		 * The integration must validate and create the comment in this request,
+		 * before output. This is not a permission or arbitrary-comment claim API.
+		 *
+		 * @param bool        $supported Whether this is a supported submission flow.
+		 * @param \WP_Comment $comment   The newly created comment.
+		 */
+		$ajax_submission = wp_doing_ajax() && apply_filters( 'sce_ajax_comment_submission', false, $comment );
+		if ( false === $cookie_bypass && ( ! wp_doing_ajax() || $ajax_submission ) && ! defined( 'EPOCH_API' ) && ! headers_sent() ) {
+			$this->generate_cookie_data( $post_id, $comment_id, 'setcookie' );
 		}
 	} //end comment_posted
 
@@ -889,7 +899,10 @@ class Simple_Comment_Editing {
 
 		// Now store a cookie.
 		if ( 'setcookie' === $return_action ) {
-			setcookie( $cookie_name, $cookie_value, $cookie_expire, COOKIEPATH, COOKIE_DOMAIN );
+			if ( setcookie( $cookie_name, $cookie_value, $cookie_expire, COOKIEPATH, COOKIE_DOMAIN ) ) {
+				// Let the original submission response render permission-checked UI.
+				$_COOKIE[ $cookie_name ] = $cookie_value;
+			}
 		} elseif ( 'removecookie' === $return_action ) {
 			setcookie( $cookie_name, $cookie_value, time() - 60, COOKIEPATH, COOKIE_DOMAIN );
 		}
@@ -923,7 +936,8 @@ class Simple_Comment_Editing {
 	 * @return bool True to load scripts, false if not
 	 */
 	public function maybe_load_scripts( $yes ) {
-		if ( defined( 'WPAC_PLUGIN_NAME' ) || is_user_logged_in() ) {
+		// Preload on comment-bearing singular views, before any AJAX/lazy insertion.
+		if ( defined( 'WPAC_PLUGIN_NAME' ) || is_user_logged_in() || comments_open() || get_comments_number() > 0 ) {
 			return true;
 		}
 
