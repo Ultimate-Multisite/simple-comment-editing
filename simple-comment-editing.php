@@ -217,6 +217,19 @@ class Simple_Comment_Editing {
 
 		$classes = array( 'sce-edit-comment' );
 		/**
+		 * Skip the decorative control reveal, not the server permission check.
+		 *
+		 * WP ULike displays its buttons without a fade. Match that presentation
+		 * by default when it is active. CSS always respects reduced motion,
+		 * even when this filter returns false.
+		 *
+		 * @param bool $skip_reveal Whether to skip the reveal animation.
+		 * @param int  $comment_id  The comment ID.
+		 */
+		if ( apply_filters( 'sce_skip_control_reveal', defined( 'WP_ULIKE_VERSION' ), $comment_id ) ) {
+			$classes[] = 'sce-reduced-motion';
+		}
+		/**
 		 * Filter: sce_wrapper_class
 		 *
 		 * Filter allow editing of wrapper class

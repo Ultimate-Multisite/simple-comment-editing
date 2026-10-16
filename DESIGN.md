@@ -300,6 +300,9 @@ Follow:
 - Keep focus in the inline editor after a failed request and announce the returned message through its status region.
 - Disable every editor action while a save or deletion is in progress, then restore the relevant controls on a retryable failure.
 - Keep the optional Quicktags toolbar within the editor width and allow its native buttons to wrap on narrow screens.
+- Keep controls hidden and outside keyboard navigation until the uncached `sce_get_time_left` AJAX response confirms permission. A failed check must not reveal the editor.
+- Retain the default 0.6-second reveal, but skip it when the browser requests `prefers-reduced-motion: reduce` or WP ULike is active (`WP_ULIKE_VERSION`). Plugins can override the latter policy through `sce_skip_control_reveal` (boolean, comment ID); they cannot override the browser preference. No admin setting is added. This changes presentation only, not ownership, nonces, or edit windows, and does not synchronize independent permission requests.
+- Do not infer immediate permission from HTML, login state, or unlimited-editing settings: personalized comment pages must bypass shared caches, and an authoritative AJAX round trip is still required.
 
 Avoid:
 
@@ -311,6 +314,7 @@ Responsive/accessibility notes:
 - Keyboard users must be able to open, cancel, save, and delete through native button behavior.
 - When Quicktags is enabled, its native keyboard-accessible toolbar is an enhancement to the textarea, not a replacement for save, cancel, or error feedback.
 - The editor's error status is announced immediately; the action preserves its expanded state when a retry is possible.
+- Motion preferences must not move focus or change button themes. Preserve the existing stacked save/cancel/delete layout at widths up to 600px; verify the same controls at desktop and mobile widths.
 
 #### Frontend asset loading controls
 

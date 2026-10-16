@@ -20,6 +20,7 @@ Animation for showing container */
 }
 
 .sce-hide {
+	visibility: hidden;
 	opacity: 0;
 	height: 0;
 	overflow: hidden;
@@ -28,6 +29,14 @@ Animation for showing container */
 	animation: showContainer 0.6s ease-in-out;
 	opacity: 1;
 	height: auto;
+}
+.sce-reduced-motion .sce-show {
+	animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.sce-edit-comment .sce-show {
+		animation: none;
+	}
 }
 .sce-comment-edit-buttons {
 	.sce-comment-edit-buttons-group {

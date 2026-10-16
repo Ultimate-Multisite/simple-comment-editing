@@ -430,7 +430,8 @@ const setup = () => {
 			const { data } = response.data;
 			let { minutes, seconds } = data;
 			const { can_edit } = data;
-			if ( ! can_edit ) {
+			// Cached markup is not proof of ownership, including for unlimited editing.
+			if ( true !== can_edit ) {
 				releaseComment( commentId );
 				button.parentNode.remove();
 				return;
@@ -554,7 +555,8 @@ const setup = () => {
 				return;
 			}
 			delete timers[ commentId ]; // Allow an explicit retry after a failed request.
-			showEditButton( button );
+			// A failed permission request must not expose cached author controls.
+			hideEditButton( button );
 			showStatus( commentId, error.message || simple_comment_editing.comment_deleted_error, true );
 		} );
 
