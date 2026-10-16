@@ -33,6 +33,9 @@ Allow your users to edit their comments and WooCommerce reviews for a period of 
 
 == Frequently Asked Questions ==
 
+= Can users edit WooCommerce review ratings? =
+Yes. The review editor keeps its rating control scoped to the existing review being edited, while the native new-review form continues to use WooCommerce's own rating control.
+
 = Why are the edit controls missing, hidden, or unable to save? =
 First identify what the browser received. Inspect the comment for SCE markup,
 then use the browser Network and Console panels to check that
