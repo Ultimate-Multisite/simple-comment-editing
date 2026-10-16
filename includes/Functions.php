@@ -96,9 +96,9 @@ class Functions {
 	 * @return bool true if can edit, false if not
 	 */
 	public static function can_edit( $comment_id, $post_id ) {
-		global $comment, $post;
-		// Dynamic lists can leave a different comment in the WordPress global.
-		$comment = get_comment( $comment_id, OBJECT ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Keep the existing filter contract bound to the requested comment.
+		global $post;
+		// Resolve the requested comment without changing the surrounding loop's global.
+		$comment = get_comment( $comment_id, OBJECT );
 		if ( ! $comment || (int) $comment->comment_post_ID !== (int) $post_id || ! in_array( (string) $comment->comment_approved, array( '0', '1' ), true ) ) {
 			return false;
 		}

@@ -58,6 +58,33 @@ class Functions_Test extends \WP_UnitTestCase {
 		$this->assertFalse( Functions::can_edit( $other, (int) get_comment( $other )->comment_post_ID ) );
 	}
 
+	/** Permission checks must leave the surrounding loop's comment untouched. */
+	public function test_permission_check_preserves_comment_global() {
+		$id                 = $this->create_comment();
+		$post_id            = (int) get_comment( $id )->comment_post_ID;
+		$loop_comment       = get_comment( self::factory()->comment->create() );
+		$GLOBALS['comment'] = $loop_comment;
+		$this->assertTrue( Functions::can_edit( $id, $post_id ) );
+		$this->assertSame( $loop_comment, $GLOBALS['comment'] );
+
+		$_COOKIE = array();
+		$this->assertFalse( Functions::can_edit( $id, $post_id ) );
+		$this->assertSame( $loop_comment, $GLOBALS['comment'] );
+		$this->assertFalse( Functions::can_edit( 0, $post_id ) );
+		$this->assertSame( $loop_comment, $GLOBALS['comment'] );
+	}
+
+	/** Calls outside a comment loop must not create a comment global. */
+	public function test_permission_check_does_not_create_comment_global() {
+		$id      = $this->create_comment();
+		$post_id = (int) get_comment( $id )->comment_post_ID;
+		unset( $GLOBALS['comment'] );
+		$this->assertTrue( Functions::can_edit( $id, $post_id ) );
+		$this->assertArrayNotHasKey( 'comment', $GLOBALS );
+		$this->assertFalse( Functions::can_edit( 0, $post_id ) );
+		$this->assertArrayNotHasKey( 'comment', $GLOBALS );
+	}
+
 	/** Empty cookie and metadata values must never count as matching ownership. */
 	public function test_empty_ownership_values_cannot_edit() {
 		$id                         = $this->create_comment();
