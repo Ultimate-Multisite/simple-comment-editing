@@ -300,6 +300,7 @@ Follow:
 - Keep focus in the inline editor after a failed request and announce the returned message through its status region.
 - Disable every editor action while a save or deletion is in progress, then restore the relevant controls on a retryable failure.
 - Keep the optional Quicktags toolbar within the editor width and allow its native buttons to wrap on narrow screens.
+- Preserve WP ULike's existing automatic comment-control nodes when replacing saved text, including top/bottom placement, live vote state, and handlers. Do not duplicate controls if the response also includes their markup; do not change the post's like button or other comments.
 
 Avoid:
 

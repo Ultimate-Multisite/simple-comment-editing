@@ -107,6 +107,38 @@ const setup = () => {
 	};
 
 	/**
+	 * Replace saved text without discarding live WP ULike comment controls.
+	 *
+	 * WP ULike omits its frontend buttons from admin-AJAX responses. Reuse
+	 * the original nodes to retain their vote state and registered handlers.
+	 *
+	 * @param {string} commentId The comment ID.
+	 * @param {string} html      The server-formatted comment content.
+	 */
+	const updateCommentContent = ( commentId, html ) => {
+		const comment = document.querySelector( `#sce-comment${ commentId }` );
+		const likeSelector = `[data-ulike-type="comment"][data-ulike-id="${ commentId }"]`;
+		const isCommentLike = ( node ) => 1 === node.nodeType && node.matches( '.wpulike' ) && node.querySelector( likeSelector );
+		const leadingLikes = [];
+		const trailingLikes = [];
+		let hasContent = false;
+		comment.childNodes.forEach( ( node ) => {
+			if ( isCommentLike( node ) ) {
+				( hasContent ? trailingLikes : leadingLikes ).push( node );
+			} else if ( 1 === node.nodeType || ( 3 === node.nodeType && node.textContent.trim() ) ) {
+				hasContent = true;
+			}
+		} );
+		comment.innerHTML = html;
+		if ( leadingLikes.length || trailingLikes.length ) {
+			// A response filter may also render buttons; never add duplicates.
+			Array.from( comment.children ).filter( isCommentLike ).forEach( ( node ) => node.remove() );
+			comment.prepend( ...leadingLikes );
+			comment.append( ...trailingLikes );
+		}
+	};
+
+	/**
 	 * Shows an editor status message without rendering server content as HTML.
 	 *
 	 * @param {number}  commentId The comment ID.
@@ -725,7 +757,7 @@ const setup = () => {
 						const { data } = response;
 						if ( data && true === data.success && data.data && 'string' === typeof data.data.comment_text ) {
 							// Update comment HTML.
-							document.querySelector( `#sce-comment${ commentId }` ).innerHTML = data.data.comment_text;
+							updateCommentContent( commentId, data.data.comment_text );
 
 							// Update textarea placeholder.
 							textareas[ commentId ] = document.querySelector( `#sce-edit-comment${ commentId } textarea` ).value;
