@@ -324,6 +324,16 @@ See "Styles" section.
 
 ## WordPress Filters
 
+### WP ULike comment controls after Save
+
+WP ULike does not automatically render its frontend comment buttons in SCE's
+admin-AJAX Save response. SCE retains the existing automatic `.wpulike` controls
+for the edited comment instead of discarding them with the old text. Their DOM
+nodes, vote state and handlers remain intact, including top, bottom and
+top-and-bottom placement. Returned copies are removed to avoid duplicates.
+Controls for the post or other comments are not moved. No extra permission or
+Save requests are introduced, and Cancel does not replace comment content.
+
 ### sce_loading_img - Change the loading image
 ```php
 /**

@@ -113,6 +113,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = Unreleased =
+* Fix: Preserve WP ULike comment buttons, their vote state, and their top/bottom placement after inline comment saves.
 * New: Add a repeat-safe, root-scoped initializer for AJAX/lazy-loaded comment controls and an opt-in guest ownership hook for validated AJAX submissions.
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
 * Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
