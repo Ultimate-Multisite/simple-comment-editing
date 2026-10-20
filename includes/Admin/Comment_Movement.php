@@ -177,7 +177,8 @@ class Comment_Movement {
 			$children = get_comments(
 				array(
 					'parent__in'   => $frontier,
-					'status'       => 'all',
+					'status'       => 'any',
+					'type'         => 'all',
 					'number'       => 501,
 					'orderby'      => 'comment_ID',
 					'order'        => 'ASC',
@@ -454,7 +455,8 @@ class Comment_Movement {
 		$children = get_comments(
 			array(
 				'parent__in' => array_keys( $plan['thread_after'] ),
-				'status'     => 'all',
+				'status'     => 'any',
+				'type'       => 'all',
 				'number'     => 501,
 				'fields'     => 'ids',
 			)
