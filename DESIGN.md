@@ -332,6 +332,40 @@ Avoid:
 - Describing a policy as a security control or as a guaranteed performance measurement.
 - Hiding an existing editable comment merely because the post no longer accepts new comments.
 
+#### Moderator comment movement
+
+Reference: `includes/Admin/Comment_Movement.php`
+
+Use WordPress's native Comments row action and admin form, not the frontend
+inline editor or an AJAX modal. Moving changes a comment's audience and thread,
+so it requires a separate preview and an explicitly labelled Confirm move button.
+
+Follow:
+
+- Keep selection, non-mutating preview and outcome distinct. Show source and
+  destination titles/IDs/statuses, moving/remaining counts, root detachment and
+  the exact child-handling policy before confirmation.
+- Explain that approved comments can become visible on the destination. Never
+  display comment bodies, authors or inaccessible post titles in a preview or
+  recovery error.
+- Use associated labels, a fieldset/legend for the move modes, native submit
+  buttons, a cancel link and standard WordPress notice classes. Keep all actions
+  keyboard-operable without JavaScript and preserve the entered destination on
+  a validation failure.
+- Show an unresolved recovery link before offering another move. Distinguish
+  successful movement, known rollback and an uncertain/interrupted outcome;
+  never report a failed write or count update as success.
+- Keep recovery a separate nonce-protected form. Explain that it restores only
+  placements and refuses new replies or unrelated changes.
+
+Responsive/accessibility notes:
+
+- Inherit WordPress admin typography, focus treatments and responsive controls;
+  do not apply the unfinished brand-token template to this native screen.
+- Use natural-width controls and wrapping paragraphs/labels, with no fixed-width
+  preview table or horizontal scrolling on narrow screens. No animations or
+  additional frontend assets are needed.
+
 ## 8. Do's and Don'ts
 
 <!-- Practical guidelines and common pitfalls. These act as guardrails when creating designs. -->
