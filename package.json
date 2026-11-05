@@ -10,7 +10,8 @@
     "lint": "npm run lint:js",
     "lint:js": "eslint src/js js gruntfile.js webpack.config.js",
     "lint:js:fix": "npm run lint:js -- --fix",
-    "lint:php": "composer phpcs"
+    "lint:php": "composer phpcs",
+    "i18n:pot": "wp i18n make-pot . languages/simple-comment-editing.pot --slug=simple-comment-editing --domain=simple-comment-editing --exclude=dist,lib,languages,node_modules"
   },
   "repository": {
     "type": "git",
