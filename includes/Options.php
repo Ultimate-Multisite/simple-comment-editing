@@ -24,6 +24,13 @@ class Options {
 	private static $options = array();
 
 	/**
+	 * The blog ID the cached options belong to.
+	 *
+	 * @var int $cache_blog_id
+	 */
+	private static $cache_blog_id = 0;
+
+	/**
 	 * Get the options for Simple Comment Editing.
 	 *
 	 * @since 3.0.0
@@ -35,9 +42,21 @@ class Options {
 	 */
 	public static function get_options( $force = false, $key = '' ) {
 
+		// Per-site options are cached per blog, so switch_to_blog() cannot return stale values.
+		$blog_id = get_current_blog_id();
+		if ( self::$cache_blog_id !== $blog_id ) {
+			self::$options       = array();
+			self::$cache_blog_id = $blog_id;
+		}
+
 		$options = self::$options;
 		if ( ! is_array( $options ) || empty( $options ) || true === $force ) {
-			$options       = get_site_option( 'sce_options', array() );
+			// Read from the same place update_options() writes: network option only when network-activated.
+			if ( Functions::is_multisite() ) {
+				$options = get_site_option( 'sce_options', array() );
+			} else {
+				$options = get_option( 'sce_options', array() );
+			}
 			self::$options = $options;
 		}
 		if ( false === $options || empty( $options ) || ! is_array( $options ) ) {
