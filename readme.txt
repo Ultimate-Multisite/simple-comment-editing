@@ -154,6 +154,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 == Changelog ==
 
 = Unreleased =
+* Fix: On multisite, read settings from the same place they are saved, so sub-sites that are not network-activated use and display their own settings instead of defaults.
 * Fix: Preserve WP ULike comment buttons, their vote state, and their top/bottom placement after inline comment saves.
 * New: Add a repeat-safe, root-scoped initializer for AJAX/lazy-loaded comment controls and an opt-in guest ownership hook for validated AJAX submissions.
 * New: Add moderator-only comment/subtree movement with a native admin preview, explicit confirmation, thread/count preservation, and recovery records.
