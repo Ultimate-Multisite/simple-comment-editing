@@ -132,7 +132,7 @@ const setup = () => {
 		comment.innerHTML = html;
 		if ( leadingLikes.length || trailingLikes.length ) {
 			// A response filter may also render buttons; never add duplicates.
-			Array.from( comment.children ).filter( isCommentLike ).forEach( ( node ) => node.remove() );
+			Array.from( comment.querySelectorAll( '.wpulike' ) ).filter( isCommentLike ).forEach( ( node ) => node.remove() );
 			comment.prepend( ...leadingLikes );
 			comment.append( ...trailingLikes );
 		}
