@@ -1,0 +1,165 @@
+name: Release WordPress Plugin
+
+# Pushing a version tag (3.4.3, v3.4.3, 3.5.0-beta.1) validates the version
+# numbers, builds the plugin ZIP, publishes a GitHub release and, for stable
+# versions only, deploys to WordPress.org. Pre-release suffixes (-alpha, -beta,
+# -rc, -dev, -preview) never reach WordPress.org and leave the readme Stable tag
+# alone. Run manually to re-build an existing tag.
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+*'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and release (for example 3.4.2)'
+        required: true
+        type: string
+      deploy_wporg:
+        description: 'Also deploy this tag to WordPress.org (stable versions only)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  PLUGIN_SLUG: simple-comment-editing
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    if: github.repository == 'Ultimate-Multisite/simple-comment-editing'
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - name: Resolve tag and version
+        id: version
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          TAG="${INPUT_TAG:-$GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Tag '$TAG' is not a plugin version"
+            exit 1
+          fi
+          PRERELEASE=false
+          case "$VERSION" in
+            *-alpha*|*-beta*|*-rc*|*-dev*|*-preview*) PRERELEASE=true ;;
+          esac
+          {
+            echo "tag=$TAG"
+            echo "version=$VERSION"
+            echo "prerelease=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tag
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: refs/tags/${{ steps.version.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Verify version numbers
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          HEADER_VERSION=$(grep -m1 -oP '^\s*\*\s*Version:\s*\K\S+' index.php)
+          CONST_VERSION=$(grep -m1 -oP "define\(\s*'SCE_VERSION'\s*,\s*'\K[^']+" index.php)
+          README_VERSION=$(grep -m1 -oP '^Stable tag:\s*\K\S+' readme.txt)
+
+          echo "Tag version:          $VERSION"
+          echo "Plugin header:        $HEADER_VERSION"
+          echo "SCE_VERSION:          $CONST_VERSION"
+          echo "readme.txt Stable tag: $README_VERSION"
+
+          fail=0
+          [ "$HEADER_VERSION" = "$VERSION" ] || { echo "::error::Plugin header Version ($HEADER_VERSION) does not match $VERSION"; fail=1; }
+          [ "$CONST_VERSION" = "$VERSION" ] || { echo "::error::SCE_VERSION ($CONST_VERSION) does not match $VERSION"; fail=1; }
+
+          # Pre-releases keep the readme Stable tag at the last stable version.
+          if [ "$PRERELEASE" = "false" ]; then
+            [ "$README_VERSION" = "$VERSION" ] || { echo "::error::readme.txt Stable tag ($README_VERSION) does not match $VERSION"; fail=1; }
+            grep -qF "= $VERSION =" readme.txt || { echo "::error::readme.txt has no '= $VERSION =' changelog entry"; fail=1; }
+          fi
+          [ "$fail" = "0" ] || exit 1
+          echo "Version numbers match: $VERSION"
+
+      - name: Build plugin ZIP
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Runtime files only. dist/ is committed, so no Node build is needed.
+          # Keep in sync with the file list in gruntfile.js (languages/ ships whole).
+          mkdir -p "build/${PLUGIN_SLUG}"
+          cp index.php simple-comment-editing.php readme.txt uninstall.php "build/${PLUGIN_SLUG}/"
+          cp -r images includes js dist lib languages "build/${PLUGIN_SLUG}/"
+          (cd build && zip -qr "../${PLUGIN_SLUG}-${VERSION}.zip" "${PLUGIN_SLUG}")
+          unzip -l "${PLUGIN_SLUG}-${VERSION}.zip" | tail -1
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-zip
+          path: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}.zip
+          retention-days: 7
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: ${{ env.PLUGIN_SLUG }}-${{ steps.version.outputs.version }}.zip
+          name: ${{ steps.version.outputs.version }}${{ steps.version.outputs.prerelease == 'true' && ' (pre-release)' || '' }}
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
+          generate_release_notes: true
+
+  deploy-to-wporg:
+    name: Deploy to WordPress.org
+    runs-on: ubuntu-latest
+    needs: build
+    # Stable versions only. Manual runs must opt in.
+    if: >-
+      needs.build.outputs.prerelease == 'false' &&
+      (github.event_name == 'push' || inputs.deploy_wporg)
+    concurrency:
+      group: wordpress-org-deployment
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    env:
+      SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+      SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+    steps:
+      - name: Check for WordPress.org credentials
+        run: |
+          if [ -z "$SVN_USERNAME" ] || [ -z "$SVN_PASSWORD" ]; then
+            echo "::error::SVN_USERNAME and SVN_PASSWORD repository secrets are required to deploy to WordPress.org"
+            exit 1
+          fi
+
+      - name: Checkout tag
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-zip
+          path: build/
+
+      - name: Install SVN
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
+      - name: Deploy and tag on WordPress.org SVN
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: bash bin/deploy-wporg.sh "build/${PLUGIN_SLUG}-${VERSION}.zip"
