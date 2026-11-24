@@ -185,7 +185,6 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * New: Add a repeat-safe, root-scoped initializer for AJAX/lazy-loaded comment controls and an opt-in guest ownership hook for validated AJAX submissions.
 * New: Add moderator-only comment/subtree movement with a native admin preview, explicit confirmation, thread/count preservation, and recovery records.
 * New: Add opt-in localized edited timestamps and privacy-preserving deleted placeholders for native classic comment lists, with threaded replies and WordPress Trash restoration.
-* New: Add opt-in reduced-motion edit controls and respect the browser reduced-motion preference without skipping server permission checks.
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
 * Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
