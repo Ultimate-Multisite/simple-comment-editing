@@ -94,6 +94,10 @@ not block comment-query loops or arbitrary custom renderers. With pagination,
 deleted branches stay with a visible live ancestor; otherwise they appear on the
 default view / first comment page. Placeholders do not change the public comment
 count or add pages. The GitHub README documents the metadata and recovery policy.
+= Can edit controls appear without the fade-in delay? =
+Yes. SCE respects the browser's reduced-motion preference and skips the decorative 0.6-second reveal animation for all button themes. It also skips the animation when WP ULike is active, to avoid an extra fade beside its like buttons. There is no admin setting. Plugins can use `add_filter( 'sce_skip_control_reveal', '__return_true' );` to skip the animation, or return false to opt out of the WP ULike default. The filter receives the default boolean and comment ID. Returning false never overrides the browser's reduced-motion preference. Keyboard behavior and the edit timer are unchanged.
+
+This is a presentation policy, not immediate authorization or a measured network speedup. Controls remain hidden until the server confirms ownership and the remaining edit time, including for logged-in authors with unlimited editing. Independent plugin requests can still finish at different times. Failed permission requests keep controls hidden. Save and Delete still validate permissions and nonces on the server. Personalized pages for logged-in users or guest authors with editing cookies must bypass shared page/CDN caches; hiding controls cannot protect private textarea content already included in incorrectly shared HTML. Purge cached pages after changing the filter or WP ULike activation.
 
 = Can I add custom fields or use a custom comment loop? =
 Yes. The integration guide in the GitHub README documents comment-scoped extra fields, safe metadata saving, custom loops that call WordPress's native `comment_text()` path, button HTML, and inline action-row styling. Keep SCE's editor wrappers and controls intact so its nonce, ownership checks, Save, Cancel, and Delete actions continue to work.
@@ -177,6 +181,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 = Unreleased =
 * Fix: On multisite, read settings from the same place they are saved, so sub-sites that are not network-activated use and display their own settings instead of defaults.
 * Fix: Preserve WP ULike comment buttons, their vote state, and their top/bottom placement after inline comment saves.
+* New: Respect browser reduced-motion preferences, skip the control reveal when WP ULike is active, and add the sce_skip_control_reveal filter without skipping server permission checks.
 * New: Add a repeat-safe, root-scoped initializer for AJAX/lazy-loaded comment controls and an opt-in guest ownership hook for validated AJAX submissions.
 * New: Add moderator-only comment/subtree movement with a native admin preview, explicit confirmation, thread/count preservation, and recovery records.
 * New: Add opt-in localized edited timestamps and privacy-preserving deleted placeholders for native classic comment lists, with threaded replies and WordPress Trash restoration.

@@ -365,6 +365,26 @@ nodes, vote state and handlers remain intact, including top, bottom and
 top-and-bottom placement. Returned copies are removed to avoid duplicates.
 Controls for the post or other comments are not moved. No extra permission or
 Save requests are introduced, and Cancel does not replace comment content.
+### sce_skip_control_reveal - Skip the decorative control animation
+
+SCE normally fades authorized controls in over 0.6 seconds. This filter receives
+the default boolean (true when WP ULike is active, detected by `WP_ULIKE_VERSION`)
+and the comment ID. There is no admin setting. For example, another plugin can
+skip the animation for every comment:
+
+```php
+add_filter( 'sce_skip_control_reveal', '__return_true' );
+```
+
+Return false to retain the fade even with WP ULike. The browser's
+`prefers-reduced-motion: reduce` preference always disables the animation,
+regardless of the filter. This affects presentation across all button themes,
+not authorization: controls still wait for the server's ownership/time check,
+and failed checks keep them hidden. WP ULike's independent rendering can finish
+earlier; this removes the extra fade, not the permission round trip. Purge cached
+pages after changing the filter or WP ULike activation. Personalized author
+pages must bypass shared caches; hidden controls cannot protect private textarea
+content in incorrectly cached HTML.
 
 ### sce_loading_img - Change the loading image
 ```php
