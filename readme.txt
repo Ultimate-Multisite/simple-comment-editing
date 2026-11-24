@@ -3,7 +3,7 @@ Contributors: ronalfy
 Tags: comment editing, comments ,edit comments, ajax comments, comment moderation
 Requires at least: 6.5
 Tested up to: 7.1
-Stable tag: 3.4.1
+Stable tag: 3.4.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,7 +178,8 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
-= Unreleased =
+= 3.4.2 =
+* Released 2026-11-24
 * Fix: On multisite, read settings from the same place they are saved, so sub-sites that are not network-activated use and display their own settings instead of defaults.
 * Fix: Preserve WP ULike comment buttons, their vote state, and their top/bottom placement after inline comment saves.
 * New: Respect browser reduced-motion preferences, skip the control reveal when WP ULike is active, and add the sce_skip_control_reveal filter without skipping server permission checks.
@@ -186,6 +187,10 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * New: Add moderator-only comment/subtree movement with a native admin preview, explicit confirmation, thread/count preservation, and recovery records.
 * New: Add opt-in localized edited timestamps and privacy-preserving deleted placeholders for native classic comment lists, with threaded replies and WordPress Trash restoration.
 * New: Add an optional native Quicktags toolbar and lifecycle hooks for external comment editors.
+* New: Add configurable asset loading policies for the editor's scripts and styles.
+* Fix: Support editing of WooCommerce review ratings.
+* Fix: Support comments inserted dynamically by Ajaxify Comments and Lazy Load for Comments.
+* Fix: Prepare translations for WordPress.org and update vulnerable build dependencies.
 * Docs: Add supported custom-field, custom-loop, button HTML, and inline action-row integration examples.
 * Fix: Keep inline comment editing available after failed AJAX requests, prevent duplicate submissions, and use accessible inline edit controls instead of links to the AJAX endpoint.
 * Fix: Load bundled frontend translations and add German Formal countdown support.
